@@ -1,0 +1,33 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_studies" %}
+{% block title %}
+	All Studies
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-hover table-condensed" data-provides="rowlink">
+	{{ macros.table_header(columns) }}
+	<tbody>
+	{% for row in study_rows %}
+		{{ make_row_link(row) }}
+	{% endfor %}
+	</tbody>
+</table>
+
+{% endblock %}
+
+
+{% macro make_row_link(row) %}
+  <tr>
+    {% for name in columns %}
+	    {% if name == "study_name" %}
+	    <td><a href="/studies/{{ row['study_name'] }}">{{ row['study_name'] }}</a></td>
+	    {% else %}
+	    <td>{{ row[name] }}</td>    
+	    {% endif %}
+    {% endfor %}
+  </tr>
+{% endmacro %}

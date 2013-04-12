@@ -1,0 +1,32 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_samples" %}
+{% block title %}
+All Samples
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-hover table-condensed" data-provides="rowlink">
+	{{ macros.table_header(columns) }}
+	<tbody>
+	{% for row in sample_rows %}
+		{{ make_row_link(row) }}
+	{% endfor %}
+	</tbody>
+</table>
+
+{% endblock %}
+
+{% macro make_row_link(row) %}
+  <tr>
+    {% for name in columns %}
+	    {% if name == "identifier" %}
+	    <td><a href="/samples/{{ row['identifier']['sample_id'] }}">{{ row['identifier']['sample_id'] }}</a></td>
+	    {% else %}
+	    <td>{{ row[name] }}</td>    
+	    {% endif %}
+    {% endfor %}
+  </tr>
+{% endmacro %}

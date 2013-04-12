@@ -1,0 +1,33 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_samples" %}
+{% block title %}
+{{ sample_id }}
+{% endblock %}
+
+{% block content %}
+
+
+
+<h3>Basic Information</h3>
+<dl class="dl-horizontal">
+  <dt>Sample ID</dt>
+  	<dd>{{ info["identifier"]["sample_id"]}}</dd>
+  <dt>Study</dt>
+  	<dd>{{ info["identifier"]["study_name"]|default("Not Provided")  }}</dd>
+  <dt>Date added</dt>
+  	<dd>{{ info["identifier"]["date_added"]|default("Not Provided")  }}</dd>
+</dl>
+<h3>Variant overview</h3> <a href="/samples/{{ sample_id }}/variants" class="btn" type="button">View Variants</a>
+<dl class="dl-horizontal">
+	{% for type in ["exonic","splicing","intronic","UTR3","UTR5"] %}
+  <dt>{{ type|title()}}</dt>
+  	<dd>{{ macros.type_badge(type, info["variants"][type]|default(0))}}</dd>
+  	{% endfor %}
+</dl>
+
+
+<h3>Phenotype overview</h3>
+
+{% endblock %}

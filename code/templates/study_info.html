@@ -1,0 +1,16 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_studies" %}
+{% block title %}
+{{ study_name }}
+{% endblock %}
+
+{% block content %}
+<dl class="dl-horizontal">
+  <dt>Description</dt>
+  <dd>{{ data["description"]|default("Not Provided") }}</dd>
+  <dt>Date added</dt>
+  <dd>{{ data["date_added"] }}</dd>
+</dl>
+{% endblock %}

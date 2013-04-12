@@ -1,0 +1,69 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_variants" %}
+{% block title %}
+	{{ title }}
+{% endblock %}
+
+{% block header %}
+	<style type="text/css" title="currentStyle">
+	        @import "/static/datatables/media/css/jquery.dataTables.css";
+			table.table thead .sorting,
+			table.table thead .sorting_asc,
+			table.table thead .sorting_desc,
+			table.table thead .sorting_asc_disabled,
+			table.table thead .sorting_desc_disabled {
+			    cursor: pointer;
+			    *cursor: hand;
+			}
+			 
+			table.table thead .sorting { background: url('/static/datatables/media/images/sort_both.png') no-repeat center right; }
+			table.table thead .sorting_asc { background: url('/static/datatables/media/images/sort_asc.png') no-repeat center right; }
+			table.table thead .sorting_desc { background: url('/static/datatables/media/images/sort_desc.png') no-repeat center right; }
+			 
+			table.table thead .sorting_asc_disabled { background: url('/static/datatables/media/images/sort_asc_disabled.png') no-repeat center right; }
+			table.table thead .sorting_desc_disabled { background: url('/static/datatables/media/images/sort_desc_disabled.png') no-repeat center right; }
+
+	</style>
+	
+	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
+	<script>
+		var jq = jQuery.noConflict();
+	    jq(document).ready(function() {
+	    jq('#example').dataTable( {
+	        "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
+	    } );
+	} );
+	jq.extend( jq.fn.dataTableExt.oStdClasses, {
+	    "sWrapper": "dataTables_wrapper form-inline"
+	} );
+	</script>
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-condensed" id="example">
+	{{ macros.table_header(["chrom","start","end","ref","alt","type","gene"]) }}
+	<tbody>
+	
+	{% for row in data %}
+		{{ make_row_link(row) }}
+	{% endfor %}
+	
+	</tbody>
+</table>
+
+{% endblock %}
+
+{% macro make_row_link(row) %}
+  <tr>
+    {% for name in ["chrom","start","end","ref","alt"] %}
+	    <td>{{ row[name] }}</td>
+    {% endfor %}
+    <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>
+    <td>{{ row["annotations"]["gene"]}}</td>
+  </tr>
+{% endmacro %}
+
+   

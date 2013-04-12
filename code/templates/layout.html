@@ -1,0 +1,95 @@
+{% import 'macros.html' as macros %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- jquery-->
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <!-- Bootstrap -->
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/bootstrap/css/bootstrap-rowlink.min.css" rel="stylesheet" media="screen">    
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+
+    </style>
+    {% block header %}{% endblock %}
+  </head>
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+          <div class="container-fluid">
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="brand" href="#">GAUSS - Genome Annotation Umbrella of SNVs and Structure</a>
+            <div class="nav-collapse collapse">
+             <!-- <p class="navbar-text pull-right">Logged in as <a href="#" class="navbar-link">Username</a></p>-->
+              <ul class="nav">
+                <li class="active"><a href="#">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+              </ul>
+            </div><!--/.nav-collapse -->
+          </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span2">
+          <!--Sidebar content-->
+          <div class="well sidebar-nav">
+
+            {%- set navigation_bar = [
+              ('/', 'index', 'Home'),
+              ('', 'nav-header', 'View'),
+              ('/studies', 'view_studies', 'Studies'),
+              ('/samples', 'view_samples', 'Samples'),
+              ('/variants', 'view_variants', 'Variants'),
+              ('#', 'view_annotations', 'Annotations'),
+              ('', 'nav-header', 'Add'),
+              ('#', 'add_studies', 'New Study'),
+              ('#', 'add_samples', 'New Samples'),
+              ('', 'nav-header', 'Download'),
+              ('#', 'variants', 'Variants'),
+              ('#', 'annotations', 'All Data')
+            ] -%}
+            {% set active_page = active_page|default('index') -%}
+
+              <ul class="nav nav-list">
+                {%- for href, id, caption in navigation_bar %}
+                  <li{%- if id == active_page %} class="active"{% endif -%}
+                     {%- if id == "nav-header" %} class="nav-header"{% endif -%}>
+                      <a href="{{ href|e }}">{{ caption|e }}</a>
+                  </li>
+                {% endfor -%}
+              
+              </ul>
+          </div><!--/.well -->
+        <!--Searchbar content-->
+          
+            {{ macros.search_form() }}
+          
+        </div>
+        <div class="span10">
+        <!--Body content-->
+        <h2>{% block title %}{% endblock %}</h2>
+        {% block content %}{% endblock %}
+
+        </div>
+      </div>
+    </div>
+    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-rowlink.min.js"></script>
+  </body>
+</html>
