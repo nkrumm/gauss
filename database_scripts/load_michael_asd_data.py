@@ -1,6 +1,7 @@
 import argparse
 import sys
-sys.path.append("/net/eichler/vol8/home/nkrumm/cuttlefish/code/")
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../code/")
 from managers import *
 import pandas
 from bson.objectid import ObjectId
@@ -27,7 +28,12 @@ var_mgr = variant_manager(db="test", conn=conn)
 sample_mgr = sample_manager(db="test", conn=conn)
 study_mgr = study_manager(db="test", conn=conn)
 
-study_id = study_mgr.get_study(args.study_name)["_id"]
+try:
+    study_id = study_mgr.get_study(args.study_name)["_id"]
+except TypeError:
+    # study doesnt exist, create it
+    study_mgr.insert_study(args.study_name, "Test Study")
+    study_id = study_mgr.get_study(args.study_name)["_id"]
 
 for sample_name in set(df["ID"]):
     df_sample = df[df.ID == sample_name]

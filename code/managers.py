@@ -1,3 +1,4 @@
+from pymongo import MongoClient
 from mongokit import *
 from orm_schema import *
 
@@ -9,15 +10,15 @@ class db_conn(object):
     """
     def __init__(self, host=None, user=None, password=None):
         self.conn = self.connect()
+    def __del__(self):
+        self.disconnect()
 
     def connect(self, host=None, user=None, password=None):
         """
         Connect to MongoDB or other DB instance(s)
         """
-        return Connection()
-
-    def close():
-        self.disconnect()
+        return MongoClient()
+        
 
 
 class manager_template(object):
@@ -156,7 +157,7 @@ class variant_manager(manager_template):
         return self.documents.find({"annotations.gene":gene})
 
     def get_variants_by_position(self, chrom, start, end):
-        return self.documents.find({"chrom":chrom, "start": {'$gt': start}, "end": {'$lt': end}})
+        return self.documents.find({"chrom":chrom, "start": {'$gte': start}, "end": {'$lte': end}})
 
     def get_sample_variant_summary(self, sample_id):
         """
