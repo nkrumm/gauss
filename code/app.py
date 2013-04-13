@@ -49,25 +49,36 @@ def samples_info(sample_id):
 def variants():
     return render_template("variants.html")
 
+def variant_details():
+    var_mgr = variant_manager(db="test",conn=g.conn)
+    data = var_mgr.get_variant(variant_id)
+    return render_template("variant_details.html", data=data)
+
 
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')
+@app.route('/variants/id:<variant_id>')
 @app.route('/samples/<sample_name>/variants')
-def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None):
+def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, variant_id=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
-    if sample_name is not None:
-        sample_mgr = sample_manager(db="test", conn=g.conn)
-        sample_id = sample_mgr.get_sample(sample_name)["_id"]
-        data = var_mgr.documents.find({"sample_id":sample_id})
-        title = "%s (All Variants)" % sample_name
-    elif gene is not None:
-        data = var_mgr.get_variants_by_gene(gene)
-        title = "<em>%s</em> (All Variants)" % gene
-    elif chrom is not None:
-        chrom_int = int(chrom.lower().replace("chr",""))
-        title="%s: %s - %s" % (chrom, start, end)
-        data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
-    return render_template("view_variants.html", title=Markup(title), data=data, columns=["chrom","start","end","ref","alt", "annotations"])
+    if variant_id is not None:
+        data = var_mgr.get_variant(variant_id)
+        data["sample_name"] = 
+        return render_template("variant_details.html", data=data)
+    else:
+        if sample_name is not None:
+            sample_mgr = sample_manager(db="test", conn=g.conn)
+            sample_id = sample_mgr.get_sample(sample_name)["_id"]
+            data = var_mgr.documents.find({"sample_id":sample_id})
+            title = "%s (All Variants)" % sample_name
+        elif gene is not None:
+            data = var_mgr.get_variants_by_gene(gene)
+            title = "<em>%s</em> (All Variants)" % gene
+        elif chrom is not None:
+            chrom_int = int(chrom.lower().replace("chr",""))
+            title="%s: %s - %s" % (chrom, start, end)
+            data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
+        return render_template("view_variants.html", title=Markup(title), data=data)
 
 
 if __name__ == '__main__':
