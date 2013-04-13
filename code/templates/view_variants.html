@@ -155,8 +155,8 @@ $(document).ready(function() {
 
 {% block content %}
 
-<table class="table table-condensed" id="example">
-	{{ macros.table_header(["chrom","start","end","ref","alt","type","gene"]) }}
+<table class="table table-hover table-condensed" id="example"  data-provides="rowlink">
+	{{ macros.table_header(["chrom","start","end","ref","alt","type","gene","id"]) }}
 	<tbody>
 	
 	{% for row in data %}
@@ -175,6 +175,7 @@ $(document).ready(function() {
     {% endfor %}
     <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>
     <td>{{ row["annotations"]["gene"]}}</td>
+    <td><a href="/variants/id:{{ row['_id'] }}">{{ row['_id'] }}</a></td>
   </tr>
 {% endmacro %}
 
