@@ -16,13 +16,15 @@
 {% endmacro %}
 
 {% macro search_form() %}
-
-    <form id="sidebar_search_form">
-	<div class="input-append">
-  		<input class="span9" id="sidebar_search_field" type="text" placeholder="">
-  		<button class="btn" type="button">Search</button>
+  <div class="row-fluid">
+  <form id="sidebar_search_form">
+	<div class="input-append" style="width: 100%;float: right;">
+  		<input style="width: 55%;float: left;" id="sidebar_search_field" type="text" placeholder="">
+  		<button class="btn" style="width: 35%;float: right;" type="button">Search</button>
 	</div>    	
 	</form>
+</div>
+
 	<script>
 	$(document).ready(function() {
     	//$('#search_field').focus();
