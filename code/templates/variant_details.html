@@ -1,0 +1,31 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_variants" %}
+{% block title %}
+Variant Details
+{% endblock %}
+
+{% block content %}
+
+
+<h3>Basic Information</h3>
+<dl class="dl-horizontal">
+  <dt>Position</dt>
+    <dd>chr{{ data["chrom"] }}:{{data["start"]}}-{{data["end"]}}</dd>
+  <dt>Sample ID</dt>
+    <dd><a href='/samples/id:{{ data["sample_id"] }}'>{{ data["sample_id"] }}</a></dd>
+  <dt>Alt / Ref</dt>
+    <dd>{{ data["alt"]}}  / {{ data["ref"] }}</dd>
+</dl>
+<h3>Annotations</h3>
+<dl class="dl-horizontal">
+  {% for row in data["annotations"] %}
+    <dt>{{ row }}</dt>
+      <dd>{{ data["annotations"][row]}}</dd>
+  {% endfor %}
+</dl>
+<h3>Record</h3>
+{{ data | pprint(verbose=True)}}
+
+{% endblock %}
