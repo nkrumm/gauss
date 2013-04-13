@@ -1,3 +1,4 @@
+from pymongo import MongoClient
 from mongokit import *
 from orm_schema import *
 
@@ -9,15 +10,15 @@ class db_conn(object):
     """
     def __init__(self, host=None, user=None, password=None):
         self.conn = self.connect()
+    def __del__(self):
+        self.disconnect()
 
     def connect(self, host=None, user=None, password=None):
         """
         Connect to MongoDB or other DB instance(s)
         """
-        return Connection()
-
-    def close():
-        self.disconnect()
+        return MongoClient()
+        
 
 
 class manager_template(object):
