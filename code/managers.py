@@ -156,7 +156,7 @@ class variant_manager(manager_template):
         return self.documents.find({"annotations.gene":gene})
 
     def get_variants_by_position(self, chrom, start, end):
-        return self.documents.find({"chrom":chrom, "start": {'$gt': start}, "end": {'$lt': end}})
+        return self.documents.find({"chrom":chrom, "start": {'$gte': start}, "end": {'$lte': end}})
 
     def get_sample_variant_summary(self, sample_id):
         """
