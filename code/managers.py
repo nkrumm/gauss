@@ -153,6 +153,9 @@ class variant_manager(manager_template):
         
         self.insert(var)
 
+    def get_variant(self, variant_id):
+        return self.documents.find_one({"_id":ObjectId(variant_id)})
+    
     def get_variants_by_gene(self, gene):
         return self.documents.find({"annotations.gene":gene})
 

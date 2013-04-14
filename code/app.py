@@ -63,7 +63,7 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
     var_mgr = variant_manager(db="test",conn=g.conn)
     if variant_id is not None:
         data = var_mgr.get_variant(variant_id)
-        data["sample_name"] = 
+        #data["sample_name"] = "test"
         return render_template("variant_details.html", data=data)
     else:
         if sample_name is not None:
