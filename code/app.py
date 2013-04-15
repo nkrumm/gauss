@@ -27,7 +27,7 @@ def studies():
 def study_info(study_name):
     study_mgr = study_manager(db="test",conn=g.conn)
     info = study_mgr.get_study(study_name)
-    return render_template("study_info.html", study_name=study_name, info=info)
+    return render_template("study_info.html", study_name=study_name, data=info)
 
 @app.route('/samples')
 def samples():

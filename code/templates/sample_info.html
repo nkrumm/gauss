@@ -30,4 +30,16 @@
 
 <h3>Phenotype overview</h3>
 
+<h3>File Metadata</h3>
+<dl class="dl-horizontal">
+<dt>Filename</dt>
+    <dd>{{ info["files"][0]["filename"]}}</dd>
+<dt>Filetype</dt>
+    <dd>{{ info["files"][0]["filetype"]}}</dd>
+{% if info["files"][0]["filetype"] == "vcf" %}
+<dt>VCF Metadata</dt>
+    <dd><pre>{{ info["files"][0]["metadata"]["vcf_header"]}}</pre></dd>
+{% endif %}
+</dl>
+
 {% endblock %}

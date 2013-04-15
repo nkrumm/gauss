@@ -31,6 +31,12 @@ class Sample(Document):
             "id": int,
             "date_added": datetime.datetime
         }],
+        "files": [{
+            "filename": basestring,
+            "filetype": basestring,
+            "metadata": dict,
+            "date_imported": datetime.datetime
+        }],
         "attributes": [{
             "name": basestring,
             "description": basestring,
@@ -82,7 +88,6 @@ class Study(Document):
 
     pass
 
-
 class Variant(Document):
     """
     MongoAlchemy ORM for variant Document
@@ -92,15 +97,20 @@ class Variant(Document):
 
     structure = {
         "sample_id": ObjectId,
+        "sample_name": basestring,
         "chrom": OR(basestring, int),
         "start": int,
-        "end": int,
+        "stop": int,
+        "id": basestring,
         "ref": basestring,
         "alt": basestring,
+        "qual": float,
+        "filter": basestring,
+        "data": basestring,
         "annotations": dict
     }
 
-    required_fields = ['sample_id','chrom','start','end','ref','alt']
+    required_fields = ['sample_id','chrom','start','stop','ref','alt']
 
     pass
 

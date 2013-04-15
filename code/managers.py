@@ -11,7 +11,7 @@ class db_conn(object):
     def __init__(self, host=None, user=None, password=None):
         self.conn = self.connect()
     def __del__(self):
-        self.disconnect()
+        self.conn.disconnect()
 
     def connect(self, host=None, user=None, password=None):
         """
@@ -72,7 +72,7 @@ class sample_manager(manager_template):
             query["identifier.study_id"] = study_id
         return self.documents.find(query, {"identifier.sample_id": True, "attributes":True , "_id": False})
 
-    def insert_sample(self, sample_id, study_id):
+    def insert_sample(self, sample_id, study_id, file_metadata = None):
         """
         insert a new sample record. SampleID must be unique,
         but study_id can correspond to an existing collection
@@ -80,7 +80,7 @@ class sample_manager(manager_template):
         sample = self.new_document()
         sample.identifier.sample_id = sample_id
         sample.identifier.study_id = study_id
-        print sample
+        sample.files = [file_metadata]
         self.insert(sample)
 
 
@@ -134,19 +134,23 @@ class variant_manager(manager_template):
             collection=self.collection,
             doctype=self.document_type)
 
-    def insert_variant(self, sample_id, chrom, start, end, ref, alt, **annotations):
+    def insert_variant_from_vcf(self, sample_id, sample_name, chrom, pos, id, ref, alt, qual, filter, data, **annotations):
         """
-        insert a new variant record.
+        insert a new variant record based on VCF file
         """
         var = self.new_document()
         
         var.sample_id = sample_id
+        var.sample_name = sample_name
         var.chrom = chrom
-        var.start = start
-        var.end = end
+        var.start = pos
+        var.stop = pos
+        var.id = id
         var.ref = ref
         var.alt = alt
-
+        var.qual = qual
+        var.filter = filter
+        var.data = data
         var.annotations = {}
         for name,value in annotations.iteritems():
             var.annotations[name] = value
