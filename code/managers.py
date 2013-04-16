@@ -137,6 +137,8 @@ class variant_manager(manager_template):
     def insert_variant_from_vcf(self, sample_id, sample_name, chrom, pos, id, ref, alt, qual, filters, data, **annotations):
         """
         insert a new variant record based on VCF file
+        All fields (except **annotations) required.
+        'filter' should be a list of tags of valid Filter names
         """
         var = self.new_document()
         
@@ -148,7 +150,7 @@ class variant_manager(manager_template):
         var.ref = ref
         var.alt = alt
         var.qual = qual
-        if isinstance(filters, basestring);
+        if isinstance(filters, basestring):
             filters = [filters]
         var.filter = filters
         var.data = data
