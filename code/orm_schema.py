@@ -105,12 +105,12 @@ class Variant(Document):
         "ref": basestring,
         "alt": basestring,
         "qual": float,
-        "filter": basestring,
+        "filter": [basestring],
         "data": basestring,
         "annotations": dict
     }
 
-    required_fields = ['sample_id','chrom','start','stop','ref','alt']
+    required_fields = ['sample_id','chrom','start','filter']
 
     pass
 
