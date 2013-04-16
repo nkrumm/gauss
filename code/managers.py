@@ -197,6 +197,9 @@ class filter_manager(manager_template):
     def get_all_filters(self):
         return self.documents.find()
 
+    def get_filter(self, filter_name):
+        return self.documents.find({"filter_name": filter_name})
+
     def create_filter(self, filter_name, filter_description):
         filter_doc = self.new_document()
         filter_doc.filter_name = filter_name
