@@ -127,5 +127,9 @@ class Annotation(Document):
     ORM for annotation Document
     """
     pass
+
+class Filter(Document):
+    """
+    ORM for filter set document
     """
     pass
