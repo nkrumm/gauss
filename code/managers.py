@@ -181,3 +181,25 @@ class variant_manager(manager_template):
 
 
 
+class filter_manager(manager_template):
+    collection = "filters"
+    document_type = Filter
+
+    def __init__(self, db, conn):
+        self.db = db
+        self.conn = conn
+        super(variant_manager, self).__init__(
+            db=self.db,
+            conn=self.conn,
+            collection=self.collection,
+            doctype=self.document_type)
+
+    def get_all_filters(self):
+        return self.documents.find()
+
+    def create_filter(self, filter_name, filter_description):
+        filter_doc = self.new_document()
+        filter_doc.filter_name = filter_name
+        filter_doc.description = filter_description
+        self.insert(filter_doc)
+    
