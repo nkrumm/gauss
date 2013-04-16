@@ -27,6 +27,7 @@ def parse_info(info_field):
 parser = argparse.ArgumentParser()
 parser.add_argument("--vcf", type=str, action="store", required=True)
 parser.add_argument("--study_name", type=str, action="store", required=True)
+parser.add_argument("--filter_name", type=str, action="store", required=True)
 parser.add_argument("--sample_name", type=str, action="store", required=True)
 
 args = parser.parse_args()
@@ -43,7 +44,7 @@ collection = "variants.%s" % args.study_name
 var_mgr = variant_manager(db="test", conn=conn)
 sample_mgr = sample_manager(db="test", conn=conn)
 study_mgr = study_manager(db="test", conn=conn)
-
+filter_mgr = filter_manager(db="test", conn=conn)
 try:
     study_id = study_mgr.get_study(args.study_name)["_id"]
 except TypeError:
@@ -64,16 +65,22 @@ except TypeError:
     sample_mgr.insert_sample(args.sample_name, study_id, file_metadata = file_metadata)
     sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
 
+try:
+    filter_id = filter_mgr.get_filter(args.filter_name)
+except:
+    # fitler doesn't exist
+    print "ERROR, filter does not exist. you must add a filter first!"
+    sys.exit(0)
 
 for ix, row in vcf_data.iterrows():
-    var_mgr.insert_variant_from_vcf(sample_id, 
-                           args.sample_name, 
-                           str(row["CHROM"]),
-                           int(row["POS"]), 
-                           row["ID"],
-                           row["REF"],
-                           row["ALT"],
-                           row["QUAL"],
-                           row["FILTER"],
-                           row["DATA"],
-                            **parse_info(row["INFO"]))
+    var_mgr.insert_variant_from_vcf(sample_id=sample_id, 
+                                    sample_name=args.sample_name, 
+                                    chrom=str(row["CHROM"]),
+                                    pos=int(row["POS"]), 
+                                    id=row["ID"],
+                                    ref=row["REF"],
+                                    alt=row["ALT"],
+                                    qual=row["QUAL"],
+                                    filters=[row["FILTER"],args.filter_name]
+                                    data=row["DATA"],
+                                     **parse_info(row["INFO"]))
