@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, Markup, g
+from flask import render_template, Markup, g, request
 import operator
 from managers import db_conn, study_manager, sample_manager, variant_manager
 
@@ -58,18 +58,37 @@ def variant_details():
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')
 @app.route('/variants/id:<variant_id>')
-@app.route('/samples/<sample_name>/variants')
+@app.route('/samples/<sample_name>/variants', methods=['GET'])
 def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, variant_id=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
     if variant_id is not None:
         data = var_mgr.get_variant(variant_id)
-        #data["sample_name"] = "test"
         return render_template("variant_details.html", data=data)
     else:
         if sample_name is not None:
             sample_mgr = sample_manager(db="test", conn=g.conn)
             sample_id = sample_mgr.get_sample(sample_name)["_id"]
-            data = var_mgr.documents.find({"sample_id":sample_id})
+            query = {"sample_id":sample_id}
+
+            if "exclude_filters" in request.args:
+                query["filter"] = {"$nin": request.args["exclude_filters"].split(";")}
+            if "include_filters" in request.args:
+                if "filter" in query:
+                    query["filter"]["$in"] = request.args["include_filters"].split(";")
+                else:
+                    query["filter"] = {"$in": request.args["include_filters"].split(";")}
+            
+            
+            projection = {"sample_name": True, 
+                          "id":True,
+                          "ref": True,
+                          "alt": True,
+                          "chrom":True,
+                          "start":True,
+                          "filter": True,
+                          "annotations.MQ":True}
+
+            data = var_mgr.documents.find(query,projection)[0:1000]
             title = "%s (All Variants)" % sample_name
         elif gene is not None:
             data = var_mgr.get_variants_by_gene(gene)
