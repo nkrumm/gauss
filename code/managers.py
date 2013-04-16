@@ -188,7 +188,7 @@ class filter_manager(manager_template):
     def __init__(self, db, conn):
         self.db = db
         self.conn = conn
-        super(variant_manager, self).__init__(
+        super(filter_manager, self).__init__(
             db=self.db,
             conn=self.conn,
             collection=self.collection,
@@ -202,4 +202,3 @@ class filter_manager(manager_template):
         filter_doc.filter_name = filter_name
         filter_doc.description = filter_description
         self.insert(filter_doc)
-    

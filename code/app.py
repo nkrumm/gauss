@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import render_template, Markup, g, request
 import operator
-from managers import db_conn, study_manager, sample_manager, variant_manager
+from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
 
 app = Flask(__name__)
 
@@ -98,6 +98,12 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
             title="%s: %s - %s" % (chrom, start, end)
             data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
         return render_template("view_variants.html", title=Markup(title), data=data)
+
+@app.route('/filters')
+def filters():
+    filter_mgr = filter_manager(db="test",conn=g.conn)
+    rows = filter_mgr.get_all_filters()
+    return render_template("filters.html", rows=rows, columns=["filter_name","description", "date_added"])
 
 
 if __name__ == '__main__':
