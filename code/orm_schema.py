@@ -117,13 +117,15 @@ class Variant(Document):
 
 class Variant_annotation(Document):
     """
-    MongoAlchemy ORM for variant_annotation Document
+    ORM for variant_annotation Document
     """
     pass
 
 
 class Annotation(Document):
     """
-    MongoAlchemy ORM for annotation Document
+    ORM for annotation Document
+    """
+    pass
     """
     pass
