@@ -132,4 +132,20 @@ class Filter(Document):
     """
     ORM for filter set document
     """
+    use_dot_notation = True
+    dot_notation_warning = True
+
+    structure = {
+        "filter_id": ObjectId,
+        "filter_name": basestring,
+        "description": basestring,
+        "stats": dict,
+        "date_added": datetime.datetime
+
+    }
+
+    required_fields = ['filter_id','filter_name','description']
+
+    default_values = {"date_added": datetime.datetime.utcnow}
+    
     pass
