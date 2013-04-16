@@ -44,7 +44,7 @@
 {% block content %}
 
 <table class="table table-condensed" id="example">
-	{{ macros.table_header(["chrom","start","end","ref","alt","type","gene"]) }}
+	{{ macros.table_header(["chrom","start","end","id","ref","alt","type","gene"]) }}
 	<tbody>
 	
 	{% for row in data %}
@@ -58,7 +58,7 @@
 
 {% macro make_row_link(row) %}
   <tr>
-    {% for name in ["chrom","start","end","ref","alt"] %}
+    {% for name in ["chrom","start","end","id",ref","alt"] %}
 	    <td>{{ row[name] }}</td>
     {% endfor %}
     <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>

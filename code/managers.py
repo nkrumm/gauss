@@ -134,7 +134,7 @@ class variant_manager(manager_template):
             collection=self.collection,
             doctype=self.document_type)
 
-    def insert_variant_from_vcf(self, sample_id, sample_name, chrom, pos, id, ref, alt, qual, filter, data, **annotations):
+    def insert_variant_from_vcf(self, sample_id, sample_name, chrom, pos, id, ref, alt, qual, vcf_filter, data, **annotations):
         """
         insert a new variant record based on VCF file
         """
@@ -144,12 +144,11 @@ class variant_manager(manager_template):
         var.sample_name = sample_name
         var.chrom = chrom
         var.start = pos
-        var.stop = pos
         var.id = id
         var.ref = ref
         var.alt = alt
         var.qual = qual
-        var.filter = filter
+        var.filter = vcf_filter
         var.data = data
         var.annotations = {}
         for name,value in annotations.iteritems():

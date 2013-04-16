@@ -1,6 +1,9 @@
 {% import 'macros.html' as macros %}
 {% extends "layout.html" %}
 
+{% block header %}
+<script type="text/javascript" src="/static/bootstrap/js/bootstrap-tab.js"></script>
+{% endblock %}
 {% set active_page = "view_samples" %}
 {% block title %}
 {{ sample_id }}
@@ -30,16 +33,33 @@
 
 <h3>Phenotype overview</h3>
 
-<h3>File Metadata</h3>
-<dl class="dl-horizontal">
-<dt>Filename</dt>
-    <dd>{{ info["files"][0]["filename"]}}</dd>
-<dt>Filetype</dt>
-    <dd>{{ info["files"][0]["filetype"]}}</dd>
-{% if info["files"][0]["filetype"] == "vcf" %}
-<dt>VCF Metadata</dt>
-    <dd><pre>{{ info["files"][0]["metadata"]["vcf_header"]}}</pre></dd>
-{% endif %}
-</dl>
+<h3>File Metadata ({{ info["files"]|length }} files total)</h3>
+<div class="tabbable">
+<ul class="nav nav-tabs">
+{% for file in info["files"] %}
+  <li {% if loop.first %}class="active"{% endif %}>
+    <a href="#tab{{loop.index}}" data-toggle="tab"><b>{{ file["filetype"] }}</b>:{{ file["filename"]|truncate(length=20,killwords=True,end="...") }}</a>
+  </li>
+{% endfor %}</ul>
 
+<div class="tab-content">
+{% for file in info["files"] %}
+  <div id="tab{{loop.index}}" class="tab-pane{% if loop.first %} active{%- endif -%}">
+    <dl class="dl-horizontal">
+    <dt>Filename</dt>
+        <dd>{{ file["filename"]}}</dd>
+    <dt>Filetype</dt>
+        <dd>{{ file["filetype"]}}</dd>
+    <dt>Description</dt>
+        <dd>{{ file["metadata"]["description"]|default("None Provided")}}</dd>
+        
+    {% if file["filetype"] == "vcf" %}
+    <dt>VCF Metadata</dt>
+        <dd><pre>{{ info["files"][0]["metadata"]["vcf_header"]}}</pre></dd>
+    {% endif %}
+    </dl>
+  </div>
+{% endfor %}
+</div>
+</div>
 {% endblock %}
