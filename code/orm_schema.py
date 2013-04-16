@@ -98,7 +98,7 @@ class Variant(Document):
     structure = {
         "sample_id": ObjectId,
         "sample_name": basestring,
-        "chrom": OR(basestring, int),
+        "chrom": basestring,
         "start": int,
         "stop": int,
         "id": basestring,
