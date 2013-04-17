@@ -29,15 +29,19 @@
 
 	</style>
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
+	<!--<script type="text/javascript" charset="utf-8" src="/static/datatables/tabletools/media/js/ZeroClipboard.js"></script>
+	<script src="/static/datatables/tabletools/media/js/TableTools.min.js"></script>-->
+	<script src="/static/datatables/media/js/ColVis.min.js"></script>
+
 	<script>
 	/* Set the defaults for DataTables initialisation */
-$.extend( true, $.fn.dataTable.defaults, {
+/*$.extend( true, $.fn.dataTable.defaults, {
 	"sDom": "<'row-fluid'<'span9'><'span3'f>r>t<'row-fluid'<'span3'i><'span4'l><'span4'p>>",
 	"sPaginationType": "bootstrap",
 	"oLanguage": {
 		"sLengthMenu": "_MENU_ records per page"
 	}
-} );
+} );*/
 
 
 /* Default class modification */
@@ -143,11 +147,18 @@ $.extend( $.fn.dataTableExt.oPagination, {
 /* Table initialisation */
 $(document).ready(function() {
 	$('#example').dataTable( {
-		
+		"sDom": "<'row-fluid'<'span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 		"sPaginationType": "bootstrap",
 		"oLanguage": {
 			"sLengthMenu": "_MENU_ variants per page"
-		}
+		},
+		/*"oTableTools": {
+			"sSwfPath" : "/static/datatables/tabletools/media/swf/copy_csv_xls.swf",
+			"aButtons": [
+				"copy",
+				"print",
+			]
+		}*/
 	} );
 	$('example.rowlink').rowlink()
 } );
