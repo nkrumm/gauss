@@ -35,6 +35,7 @@ class Sample(Document):
             "filename": basestring,
             "filetype": basestring,
             "metadata": dict,
+            "filter_name": basestring,
             "date_imported": datetime.datetime
         }],
         "attributes": [{

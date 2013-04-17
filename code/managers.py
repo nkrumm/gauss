@@ -72,7 +72,7 @@ class sample_manager(manager_template):
             query["identifier.study_id"] = study_id
         return self.documents.find(query, {"identifier.sample_id": True, "attributes":True , "_id": False})
 
-    def insert_sample(self, sample_id, study_id, file_metadata = None):
+    def insert_sample(self, sample_id, study_id, files = None):
         """
         insert a new sample record. SampleID must be unique,
         but study_id can correspond to an existing collection
