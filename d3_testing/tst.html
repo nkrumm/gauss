@@ -1,0 +1,50 @@
+<html>
+<head>
+<script src="d3.v3/d3.v3.min.js"></script>
+<style>
+.arc path {
+  stroke: #fff;
+}
+</style>
+</head>
+<body>
+
+
+
+<script>
+var dataset = [{"name":"exonic", "variant_count":145,"color":"red"},
+			   {"name":"intronic", "variant_count":20,"color":"gray"},
+			   {"name":"UTR", "variant_count": 20, "color":"blue"}];
+
+
+var pie = d3.layout.pie()
+    .sort(null)
+    .value(function(d) { return d.variant_count; });
+
+radius = 100
+width = 200
+height = 200
+
+var arc = d3.svg.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(radius - 70);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+var g = svg.selectAll(".arc")
+		.data(pie(dataset))
+		.enter()
+		.append("g")
+		.attr("class", "arc")
+		.append("path")
+		.attr("d", arc)
+		.style("fill",function(d){return d.data.color;});
+
+
+</script>
+</body>
+</html>
