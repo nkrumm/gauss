@@ -152,6 +152,18 @@ $(document).ready(function() {
 		"oLanguage": {
 			"sLengthMenu": "_MENU_ variants per page"
 		},
+/*		"aoColumns": [ 
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			{ "bVisible":    false }
+		],*/
 		/*"oTableTools": {
 			"sSwfPath" : "/static/datatables/tabletools/media/swf/copy_csv_xls.swf",
 			"aButtons": [
@@ -182,12 +194,12 @@ $(document).ready(function() {
 
 {% macro make_row_link(row) %}
   <tr>
-    {% for name in ["chrom","start","end","dbSNP","ref","alt","filter"] %}
+    {% for name in ["chrom","start","end","id","ref","alt","filter"] %}
 	    <td>{{ row[name] }}</td>
     {% endfor %}
     <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>
     <td>{{ row["annotations"]["gene"]}}</td>
-    <td><a href="/variants/id:{{ row['_id'] }}">{{ row['_id'] }}</a></td>
+    <td><a href="/variants/id:{{ row['_id'] }}">id</a></td>
   </tr>
 {% endmacro %}
 
