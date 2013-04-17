@@ -83,6 +83,10 @@ class sample_manager(manager_template):
         sample.files = [file_metadata]
         self.insert(sample)
 
+    def add_file_to_sample(self, sample_id, file_dict):
+        self.documents.update({"identifier.sample_id":sample_id}, 
+                              {"$push": {"files":file_dict}})
+
 
 class study_manager(manager_template):
     collection = "studies"

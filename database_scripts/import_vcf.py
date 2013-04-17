@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print args
-
+    args.vcf = os.path.realpath(args.vcf)
     # Read VCF file
     vcf_data, header_data = read_vcf(args.vcf)
 
@@ -56,14 +56,17 @@ if __name__ == "__main__":
     except TypeError:
         # sample doesnt exist yet, insert it!
         print args.sample_name, study_id
-        files = {"filename": args.vcf,
-                 "filetype": "vcf",
-                 "metadata": {"vcf_header": header_data},
-                 "filter_name": args.filter_name,
-                 "date_imported": datetime.datetime.today()}
-
         sample_mgr.insert_sample(args.sample_name, study_id, files = file_metadata)
         sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
+    finally:
+        # insert the new meta data
+        file_dict = {"filename": args.vcf,
+                 "filetype": "vcf",
+                 "metadata": {"vcf_header": header_data},
+                 "filter_name": args.filter_name    ,
+                 "date_imported": datetime.datetime.today()}
+        sample_mgr.add_file_to_sample(args.sample_name, file_dict)
+
 
 
     for ix, row in vcf_data.iterrows():
@@ -75,6 +78,6 @@ if __name__ == "__main__":
                                         ref=row["REF"],
                                         alt=row["ALT"],
                                         qual=row["QUAL"],
-                                        filters=[args.filter_name, row["FILTER"]]
+                                        filters=[args.filter_name, row["FILTER"]],
                                         data=row["DATA"],
                                          **parse_info(row["INFO"]))
