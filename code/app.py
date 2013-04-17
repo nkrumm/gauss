@@ -103,7 +103,7 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
 def filters():
     filter_mgr = filter_manager(db="test",conn=g.conn)
     rows = filter_mgr.get_all_filters()
-    return render_template("filters.html", rows=rows, columns=["filter_name","description", "date_added"])
+    return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added"])
 
 
 if __name__ == '__main__':

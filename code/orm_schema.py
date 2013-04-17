@@ -139,9 +139,9 @@ class Filter(Document):
     structure = {
         "filter_name": basestring,
         "description": basestring,
+        "type": basestring,
         "stats": dict,
         "date_added": datetime.datetime
-
     }
 
     required_fields = ['filter_name','description']
