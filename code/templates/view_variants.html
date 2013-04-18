@@ -177,7 +177,14 @@
 	} );
 		</script>
 <style>
-.no-hover:hover { background-position: 0px !important; }
+.filter-tag {display: inline-block; 
+			 width: 10px;
+			 height: 10px;
+			 background-color: gray;
+			 margin: 1px;}
+.GATK_import {background-color: red;}
+.Rare_variants {background-color: blue;}
+.Oroak_2012_exome {background-color: orange;}
 </style>
 {% endblock %}
 
@@ -194,21 +201,36 @@
 </div>
 
 <script>
-$(document).ready(function() {
-	var set_names = ["ORoak 2012 Exome","ORoak 2012 MIPs","Brad MIPs v2","Brad MIPs v1"];
-	var sets = {"ORoak 2012 Exome": {id:'oroak_2012_exome', color:"btn-info"}, "ORoak 2012 MIPs": {id:'oroak_2012_mips', color:"btn-warning"}, "Brad MIPs v2": {id: "brad_mips_v2", color:"btn-warning"}, "Brad MIPs v1": {id: "brad_mips_v1", color: "btn-warning"}}
 
-	$('#set_search').typeahead({source: set_names,
-								updater: function(item) {
-											$('#set_labels').append('<div class="btn-group" id='+sets[item].id+'>' + 
-																	'<button class="btn btn-small '+sets[item].color+' no-hover">'+item+'</button>' + 
-																	'<button class="btn btn-small '+sets[item].color+'" onClick=\'$("#'+sets[item].id+'").remove()\'>x</button></div>')
- 								}});
+function create_set_label(set_item){
+	id = set_item.filter_name
+	if (set_item["filter_title"] != undefined){
+		title = set_item.filter_title
+	} else {title = set_item.filter_name}
+	color = set_item.color
+	return '<div class="btn-group" id='+id+'>' + 
+		   '<button class="btn btn '+color+' no-hover">'+title+'</button>' + 
+		   '<button class="btn btn '+color+'" onClick=\'$("#'+id+'").remove()\'>x</button></div>'
+}
+
+var sets = {};
+$.getJSON('/filters.json', function(data){
+							data = data["result"]
+							for (var i = 0; i < data.length; i++) {
+								sets[data[i].filter_name] = data[i]
+							}
+})
+
+$(document).ready(function() {
+	$('#set_search').typeahead({source: Object.keys(sets),
+								updater: function(item) {$('#set_labels').append(create_set_label(sets[item]))}
+							   }
+							  );
 })
 </script>  
 
 <table class="table table-hover table-condensed" id="example"  data-provides="rowlink">
-	{{ macros.table_header(["chrom","start","end","dbSNP","ref","alt","filter","type","gene","_id"]) }}
+	{{ macros.table_header(["chrom","start","end","dbSNP","ref","alt","filter/sets (key)","type","gene","_id"]) }}
 	<tbody>
 	
 	{% for row in data %}
@@ -222,9 +244,14 @@ $(document).ready(function() {
 
 {% macro make_row_link(row) %}
   <tr>
-    {% for name in ["chrom","start","end","id","ref","alt","filter"] %}
+    {% for name in ["chrom","start","end","id","ref","alt"] %}
 	    <td>{{ row[name] }}</td>
     {% endfor %}
+    <td>
+    	{%- for filter in row["filter"] -%}
+    		<div class="filter-tag {{filter|replace(" ","_")}}"></div>
+    	{%- endfor -%}
+    </td>
     <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>
     <td>{{ row["annotations"]["gene"]}}</td>
     <td><a href="/variants/id:{{ row['_id'] }}">id</a></td>
