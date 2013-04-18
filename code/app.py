@@ -98,13 +98,15 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
             chrom_int = int(chrom.lower().replace("chr",""))
             title="%s: %s - %s" % (chrom, start, end)
             data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
-        return render_template("view_variants.html", title=Markup(title), data=data)
+        filter_mgr = filter_manager(db="test", conn=g.conn)
+        filters = filter_mgr.get_all_filters()
+        return render_template("view_variants.html", title=Markup(title), data=data, filters=filters)
 
 @app.route('/filters')
 def filters():
     filter_mgr = filter_manager(db="test",conn=g.conn)
     rows = filter_mgr.get_all_filters()
-    return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added"])
+    return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added","color"])
 
 @app.route('/filters.json')
 def jsonfilters():
