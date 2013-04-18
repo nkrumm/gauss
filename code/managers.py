@@ -202,7 +202,7 @@ class filter_manager(manager_template):
             doctype=self.document_type)
 
     def get_all_filters(self):
-        return self.documents.find()
+        return self.documents.find({},{"_id":0})
 
     def get_filter(self, filter_name):
         return self.documents.find({"filter_name": filter_name})

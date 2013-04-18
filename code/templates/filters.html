@@ -6,6 +6,9 @@
 	All filters/sets
 {% endblock %}
 
+{% block header %}
+{% endblock %}
+
 {% block content %}
 
 <table class="table table-hover table-condensed" data-provides="rowlink">
@@ -24,7 +27,7 @@
   <tr>
     {% for name in columns %}
 	    {% if name == "filter_name" %}
-	    <td><a href="/filters/{{ row['filter_name'] }}">{{ row['filter_name'] }}</a></td>
+	    <td><button class="btn btn-small {{ row["color"]|default("") }} no-hover" href="/filters/{{ row['filter_name'] }}">{{ row['filter_title'] | default(row['filter_name']) }}</button></td>
 	    {% else %}
 	    <td>{{ row[name] }}</td>    
 	    {% endif %}
