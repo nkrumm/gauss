@@ -1,7 +1,8 @@
 from flask import Flask
-from flask import render_template, Markup, g, request
+from flask import render_template, Markup, g, request, jsonify
 import operator
 from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
+from bson import json_util
 
 app = Flask(__name__)
 
@@ -105,6 +106,11 @@ def filters():
     rows = filter_mgr.get_all_filters()
     return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added"])
 
+@app.route('/filters.json')
+def jsonfilters():
+    filter_mgr = filter_manager(db="test",conn=g.conn)
+    rows = filter_mgr.get_all_filters()
+    return jsonify(result=[i for i in rows])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
