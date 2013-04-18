@@ -88,7 +88,7 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
                           "filter": True,
                           "annotations.MQ":True}
 
-            data = var_mgr.documents.find(query,projection)[0:1000]
+            data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
             title = "%s (All Variants)" % sample_name
         elif gene is not None:
             data = var_mgr.get_variants_by_gene(gene)
