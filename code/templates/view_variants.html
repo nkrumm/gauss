@@ -7,197 +7,16 @@
 {% endblock %}
 
 {% block header %}
-	<style type="text/css" title="currentStyle">
-	        
-			table.table thead .sorting,
-			table.table thead .sorting_asc,
-			table.table thead .sorting_desc,
-			table.table thead .sorting_asc_disabled,
-			table.table thead .sorting_desc_disabled {
-			    cursor: pointer;
-			    *cursor: hand;
-			}
-			 
-			table.table thead .sorting { background: url('/static/datatables/media/images/sort_both.png') no-repeat center right; }
-			table.table thead .sorting_asc { background: url('/static/datatables/media/images/sort_asc.png') no-repeat center right; }
-			table.table thead .sorting_desc { background: url('/static/datatables/media/images/sort_desc.png') no-repeat center right; }
-			 
-			table.table thead .sorting_asc_disabled { background: url('/static/datatables/media/images/sort_asc_disabled.png') no-repeat center right; }
-			table.table thead .sorting_desc_disabled { background: url('/static/datatables/media/images/sort_desc_disabled.png') no-repeat center right; }
-
-			.pagination {margin: 0;}
-
-	</style>
+	<link href="/static/datatables/datatables.view_variants_specific.css" rel="stylesheet" media="screen">
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
-	<!--<script type="text/javascript" charset="utf-8" src="/static/datatables/tabletools/media/js/ZeroClipboard.js"></script>
-	<script src="/static/datatables/tabletools/media/js/TableTools.min.js"></script>-->
 	<script src="/static/datatables/media/js/ColVis.min.js"></script>
+	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
+
 	<script>
-	$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
-	{
-	    if ( sNewSource !== undefined && sNewSource !== null ) {
-	        oSettings.sAjaxSource = sNewSource;
-	    }
-	 
-	    // Server-side processing should just call fnDraw
-	    if ( oSettings.oFeatures.bServerSide ) {
-	        this.fnDraw();
-	        return;
-	    }
-	 
-	    this.oApi._fnProcessingDisplay( oSettings, true );
-	    var that = this;
-	    var iStart = oSettings._iDisplayStart;
-	    var aData = [];
-	 
-	    this.oApi._fnServerParams( oSettings, aData );
-	 
-	    oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
-	        /* Clear the old information from the table */
-	        that.oApi._fnClearTable( oSettings );
-	 
-	        /* Got the data - add it to the table */
-	        var aData =  (oSettings.sAjaxDataProp !== "") ?
-	            that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
-	 
-	        for ( var i=0 ; i<aData.length ; i++ )
-	        {
-	            that.oApi._fnAddData( oSettings, aData[i] );
-	        }
-	         
-	        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
-	 
-	        that.fnDraw();
-	 
-	        if ( bStandingRedraw === true )
-	        {
-	            oSettings._iDisplayStart = iStart;
-	            that.oApi._fnCalculateEnd( oSettings );
-	            that.fnDraw( false );
-	        }
-	 
-	        that.oApi._fnProcessingDisplay( oSettings, false );
-	 
-	        /* Callback user function - for event handlers etc */
-	        if ( typeof fnCallback == 'function' && fnCallback !== null )
-	        {
-	            fnCallback( oSettings );
-	        }
-	    }, oSettings );
-	};
-	</script>
-	<script>
-	/* Set the defaults for DataTables initialisation */
-	/*$.extend( true, $.fn.dataTable.defaults, {
-		"sDom": "<'row-fluid'<'span9'><'span3'f>r>t<'row-fluid'<'span3'i><'span4'l><'span4'p>>",
-		"sPaginationType": "bootstrap",
-		"oLanguage": {
-			"sLengthMenu": "_MENU_ records per page"
-		}
-	} );*/
 
-
-	/* Default class modification */
-	$.extend( $.fn.dataTableExt.oStdClasses, {
-		"sWrapper": "dataTables_wrapper form-inline"
-	} );
-
-
-	/* API method to get paging information */
-	$.fn.dataTableExt.oApi.fnPagingInfo = function ( oSettings )
-	{
-		return {
-			"iStart":         oSettings._iDisplayStart,
-			"iEnd":           oSettings.fnDisplayEnd(),
-			"iLength":        oSettings._iDisplayLength,
-			"iTotal":         oSettings.fnRecordsTotal(),
-			"iFilteredTotal": oSettings.fnRecordsDisplay(),
-			"iPage":          oSettings._iDisplayLength === -1 ?
-				0 : Math.ceil( oSettings._iDisplayStart / oSettings._iDisplayLength ),
-			"iTotalPages":    oSettings._iDisplayLength === -1 ?
-				0 : Math.ceil( oSettings.fnRecordsDisplay() / oSettings._iDisplayLength )
-		};
-	};
-
-
-	/* Bootstrap style pagination control */
-	$.extend( $.fn.dataTableExt.oPagination, {
-		"bootstrap": {
-			"fnInit": function( oSettings, nPaging, fnDraw ) {
-				var oLang = oSettings.oLanguage.oPaginate;
-				var fnClickHandler = function ( e ) {
-					e.preventDefault();
-					if ( oSettings.oApi._fnPageChange(oSettings, e.data.action) ) {
-						fnDraw( oSettings );
-					}
-				};
-
-				$(nPaging).addClass('pagination').append(
-					'<ul>'+
-						'<li class="prev disabled"><a href="#">&larr; '+oLang.sPrevious+'</a></li>'+
-						'<li class="next disabled"><a href="#">'+oLang.sNext+' &rarr; </a></li>'+
-					'</ul>'
-				);
-				var els = $('a', nPaging);
-				$(els[0]).bind( 'click.DT', { action: "previous" }, fnClickHandler );
-				$(els[1]).bind( 'click.DT', { action: "next" }, fnClickHandler );
-			},
-
-			"fnUpdate": function ( oSettings, fnDraw ) {
-				var iListLength = 5;
-				var oPaging = oSettings.oInstance.fnPagingInfo();
-				var an = oSettings.aanFeatures.p;
-				var i, ien, j, sClass, iStart, iEnd, iHalf=Math.floor(iListLength/2);
-
-				if ( oPaging.iTotalPages < iListLength) {
-					iStart = 1;
-					iEnd = oPaging.iTotalPages;
-				}
-				else if ( oPaging.iPage <= iHalf ) {
-					iStart = 1;
-					iEnd = iListLength;
-				} else if ( oPaging.iPage >= (oPaging.iTotalPages-iHalf) ) {
-					iStart = oPaging.iTotalPages - iListLength + 1;
-					iEnd = oPaging.iTotalPages;
-				} else {
-					iStart = oPaging.iPage - iHalf + 1;
-					iEnd = iStart + iListLength - 1;
-				}
-
-				for ( i=0, ien=an.length ; i<ien ; i++ ) {
-					// Remove the middle elements
-					$('li:gt(0)', an[i]).filter(':not(:last)').remove();
-
-					// Add the new list items and their event handlers
-					for ( j=iStart ; j<=iEnd ; j++ ) {
-						sClass = (j==oPaging.iPage+1) ? 'class="active"' : '';
-						$('<li '+sClass+'><a href="#">'+j+'</a></li>')
-							.insertBefore( $('li:last', an[i])[0] )
-							.bind('click', function (e) {
-								e.preventDefault();
-								oSettings._iDisplayStart = (parseInt($('a', this).text(),10)-1) * oPaging.iLength;
-								fnDraw( oSettings );
-							} );
-					}
-
-					// Add / remove disabled classes from the static elements
-					if ( oPaging.iPage === 0 ) {
-						$('li:first', an[i]).addClass('disabled');
-					} else {
-						$('li:first', an[i]).removeClass('disabled');
-					}
-
-					if ( oPaging.iPage === oPaging.iTotalPages-1 || oPaging.iTotalPages === 0 ) {
-						$('li:last', an[i]).addClass('disabled');
-					} else {
-						$('li:last', an[i]).removeClass('disabled');
-					}
-				}
-			}
-		}
-	} );
 
 	/* Table initialisation */
+	var dtable;
 	$(document).ready(function() {
 		dtable = $('#example').dataTable( {
 			"sDom": "<'row-fluid'<'span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
@@ -211,7 +30,7 @@
 				{"sTitle":"Chromosome"},
 				{"sTitle":"Start"},
 				{"sTitle":"Stop"},
-				{"sTitle":"dbSNP"},
+				{"sTitle":"dbSNP","bSearchable": true},
 				{"sTitle":"Ref","bSearchable": false},
 				{"sTitle":"Alt","bSearchable": false},
 				{"sTitle":"Filters/Sets","bSearchable": true},
@@ -220,7 +39,7 @@
 			],
 			"bProcessing": true,
         	"bServerSide": false,
-        	"sAjaxSource": "/samples/14006.p1/variants.json"
+        	"sAjaxSource": "/_variants.json?sample_id="+sample_id
 		} );
 		
 	} );
@@ -236,20 +55,11 @@
 .Rare_variants {background-color: blue;}
 .Oroak_2012_exome {background-color: orange;}
 </style>
+
 <script>
 
-function remove_filter(item){
-	sets[item].applied = false
-	var filter_string = "include_filters="
-	for (var set in sets){
-		if (sets[set].applied){
-			filter_string += sets[set].filter_name
-			filter_string += ";"
-		}
-	}
-	console.log( '/samples/14006.p1/variants.json?' + filter_string)
-	dtable.fnReloadAjax( '/samples/14006.p1/variants.json?' + filter_string);
-}
+var sets = {}
+var sample_id = "{{ sample_id }}"
 
 function create_set_label(set_item){
 	id = set_item.filter_name
@@ -259,29 +69,47 @@ function create_set_label(set_item){
 	color = set_item.color
 	return '<div class="btn-group" id='+id+'>' + 
 		   '<button class="btn btn '+color+' no-hover">'+title+'</button>' + 
-		   '<button class="btn btn '+color+'" onClick=\'$("#'+id+'").remove(); remove_filter("'+id+'")\'>x</button></div>'
+		   '<button class="btn btn '+color+'" onClick=\'remove_filter("'+id+'")\'>x</button></div>'
 };
-var sets = {}
+
+function build_filter_string(sets){
+	var filter_string = "include_filters="
+		for (var set in sets){
+			if (sets[set].applied){
+				filter_string += sets[set].filter_name
+				filter_string += ";"
+			}
+		}
+	return filter_string
+}
+
+function remove_filter(item){
+	$("#"+item).remove();
+	sets[item].applied = false
+	filter_string = build_filter_string(sets)
+	console.log('/_variants.json?sample_id=' + sample_id + "&" + filter_string)
+	dtable.fnReloadAjax( '/_variants.json?sample_id=' + sample_id + "&" + filter_string);
+}
+
+function add_filter(item){
+	$('#set_labels').append(create_set_label(sets[item]));
+	sets[item].applied = true
+	filter_string = build_filter_string(sets)
+	console.log('/_variants.json?sample_id=' + sample_id + "&" + filter_string)
+	dtable.fnReloadAjax( '/_variants.json?sample_id=' + sample_id + "&" + filter_string);
+}
+
+/* download the filters from server, populate the sets[] array and set up the typeahead*/
 $(document).ready(function() {
 	$.getJSON('/filters.json', function(data){
-							data = data["result"]
-							for (var i = 0; i < data.length; i++) {
-								sets[data[i].filter_name] = data[i]
-							}
-							$('#set_search').typeahead({'source': Object.keys(sets), 
-														'updater': function(item) {
-																		$('#set_labels').append(create_set_label(sets[item]));
-																		sets[item].applied = true
-																		var filter_string = "include_filters="
-																		for (var set in sets){
-																			if (sets[set].applied){
-																				filter_string += sets[set].filter_name
-																				filter_string += ";"
-																			}
-																		}
-																		console.log( '/samples/14006.p1/variants.json?' + filter_string)
-																		dtable.fnReloadAjax( '/samples/14006.p1/variants.json?' + filter_string);
-																	}});
+									data = data["result"]
+									for (var i = 0; i < data.length; i++) {
+										sets[data[i].filter_name] = data[i]
+									}
+									$('#set_search').typeahead({'source': Object.keys(sets), 
+																'updater': add_filter
+															   }
+							);
 	});
 });
 </script>  
@@ -298,24 +126,6 @@ $(document).ready(function() {
 	</div>
 	</div>
 
-	<table class="table table-hover table-condensed" id="example"  data-provides="rowlink">
+	<table class="table table-hover table-condensed" id="example">
 	</table>
 {% endblock %}
-
-{% macro make_row_link(row) %}
-  <tr>
-    {% for name in ["chrom","start","end","id","ref","alt"] %}
-	    <td>{{ row[name] }}</td>
-    {% endfor %}
-    <td>
-    	{%- for filter in row["filter"] -%}
-    		<div class="filter-tag {{filter|replace(" ","_")}}"></div>
-    	{%- endfor -%}
-    </td>
-    <td>{{ macros.type_tag(row["annotations"]["type"])}}</td>
-    <td>{{ row["annotations"]["gene"]}}</td>
-    <td><a href="/variants/id:{{ row['_id'] }}">id</a></td>
-  </tr>
-{% endmacro %}
-
-   
