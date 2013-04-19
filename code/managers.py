@@ -80,7 +80,8 @@ class sample_manager(manager_template):
         sample = self.new_document()
         sample.identifier.sample_id = sample_id
         sample.identifier.study_id = study_id
-        sample.files = [file_metadata]
+        if files is not None:
+            sample.files = [files]
         self.insert(sample)
 
     def add_file_to_sample(self, sample_id, file_dict):

@@ -29,6 +29,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--vcf", type=str, action="store", required=True)
     parser.add_argument("--study_name", type=str, action="store", required=True)
+    parser.add_argument("--study_desc", type=str, action="store", required=False, default="Study Description")
     parser.add_argument("--filter_name", type=str, action="store", required=True)
     parser.add_argument("--sample_name", type=str, action="store", required=True)
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
         study_id = study_mgr.get_study(args.study_name)["_id"]
     except TypeError:
         # study doesnt exist, create it
-        study_mgr.insert_study(args.study_name, "Test Study")
+        study_mgr.insert_study(args.study_name, args.study_desc)
         study_id = study_mgr.get_study(args.study_name)["_id"]
 
     try:
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     except TypeError:
         # sample doesnt exist yet, insert it!
         print args.sample_name, study_id
-        sample_mgr.insert_sample(args.sample_name, study_id, files = file_metadata)
+        sample_mgr.insert_sample(args.sample_name, study_id)
         sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
     finally:
         # insert the new meta data
@@ -70,6 +71,11 @@ if __name__ == "__main__":
 
 
     for ix, row in vcf_data.iterrows():
+        if row["FILTER"] != "0":
+            filters = [args.filter_name, row["FILTER"]]
+        else:
+            filters = [args.filter_name]
+
         var_mgr.insert_variant_from_vcf(sample_id=sample_id, 
                                         sample_name=args.sample_name, 
                                         chrom=str(row["CHROM"]),
@@ -78,6 +84,6 @@ if __name__ == "__main__":
                                         ref=row["REF"],
                                         alt=row["ALT"],
                                         qual=row["QUAL"],
-                                        filters=[args.filter_name, row["FILTER"]],
+                                        filters=filters,
                                         data=row["DATA"],
                                          **parse_info(row["INFO"]))

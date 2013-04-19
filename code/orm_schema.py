@@ -101,7 +101,7 @@ class Variant(Document):
         "sample_name": basestring,
         "chrom": basestring,
         "start": int,
-        "stop": int,
+        "end": int,
         "id": basestring,
         "ref": basestring,
         "alt": basestring,
