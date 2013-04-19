@@ -128,7 +128,7 @@ def json_variants(return_query=False):
     data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
     out = {}
     out["aaData"] = []
-    column_list = ["chrom","start","end","id","ref","alt"]
+    column_list = ["chrom","start","end","sample_name","id","ref","alt"]
     for row in data:
         row_data = [row.get(c,'') for c in column_list]
         row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
