@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import render_template, Markup, g, request, jsonify
 import operator
+from collections import defaultdict
 from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
 from bson import json_util
 
@@ -103,7 +104,7 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
         if type is None:
             filter_mgr = filter_manager(db="test", conn=g.conn)
             filters = filter_mgr.get_all_filters()
-            return render_template("view_variants.html", title=Markup(title), data=data)
+            return render_template("view_variants.html", title=Markup(title), sample_id=sample_name)
         elif type == ".json":
             # reformat the data
             out = {}
@@ -116,6 +117,41 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
                 row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
                 out["aaData"].append(row_data)
             return jsonify(out)
+
+@app.route('/_variants.json', methods=['GET'])
+def json_variants():
+    var_mgr = variant_manager(db="test",conn=g.conn)
+    sample_mgr = sample_manager(db="test", conn=g.conn)
+    sample_id = sample_mgr.get_sample(request.args["sample_id"])["_id"]
+    query = defaultdict(lambda: defaultdict(list))
+    query["sample_id"] = sample_id
+    if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
+        query["filter"]["$nin"] = request.args["exclude_filters"].split(";")
+    if ("include_filters" in request.args)  and len(request.args["include_filters"]) > 0:
+        query["filter"]["$in"] = request.args["include_filters"].split(";")
+
+    projection = {"sample_name": True, 
+                      "id":True,
+                      "ref": True,
+                      "alt": True,
+                      "chrom":True,
+                      "start":True,
+                      "filter": True,
+                      "annotations.MQ":True}
+
+    data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
+    out = {}
+    out["aaData"] = []
+    column_list = ["chrom","start","end","id","ref","alt"]
+    for row in data:
+        row_data = [row.get(c,'') for c in column_list]
+        row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
+        row_data.extend([row["annotations"][a] for a in ["MQ"]])
+        row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
+        out["aaData"].append(row_data)
+    
+    return jsonify(out)
+
 
 @app.route('/filters')
 def filters():
