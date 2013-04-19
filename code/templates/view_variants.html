@@ -32,7 +32,60 @@
 	<!--<script type="text/javascript" charset="utf-8" src="/static/datatables/tabletools/media/js/ZeroClipboard.js"></script>
 	<script src="/static/datatables/tabletools/media/js/TableTools.min.js"></script>-->
 	<script src="/static/datatables/media/js/ColVis.min.js"></script>
-
+	<script>
+	$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
+	{
+	    if ( sNewSource !== undefined && sNewSource !== null ) {
+	        oSettings.sAjaxSource = sNewSource;
+	    }
+	 
+	    // Server-side processing should just call fnDraw
+	    if ( oSettings.oFeatures.bServerSide ) {
+	        this.fnDraw();
+	        return;
+	    }
+	 
+	    this.oApi._fnProcessingDisplay( oSettings, true );
+	    var that = this;
+	    var iStart = oSettings._iDisplayStart;
+	    var aData = [];
+	 
+	    this.oApi._fnServerParams( oSettings, aData );
+	 
+	    oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
+	        /* Clear the old information from the table */
+	        that.oApi._fnClearTable( oSettings );
+	 
+	        /* Got the data - add it to the table */
+	        var aData =  (oSettings.sAjaxDataProp !== "") ?
+	            that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
+	 
+	        for ( var i=0 ; i<aData.length ; i++ )
+	        {
+	            that.oApi._fnAddData( oSettings, aData[i] );
+	        }
+	         
+	        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+	 
+	        that.fnDraw();
+	 
+	        if ( bStandingRedraw === true )
+	        {
+	            oSettings._iDisplayStart = iStart;
+	            that.oApi._fnCalculateEnd( oSettings );
+	            that.fnDraw( false );
+	        }
+	 
+	        that.oApi._fnProcessingDisplay( oSettings, false );
+	 
+	        /* Callback user function - for event handlers etc */
+	        if ( typeof fnCallback == 'function' && fnCallback !== null )
+	        {
+	            fnCallback( oSettings );
+	        }
+	    }, oSettings );
+	};
+	</script>
 	<script>
 	/* Set the defaults for DataTables initialisation */
 	/*$.extend( true, $.fn.dataTable.defaults, {
@@ -146,36 +199,33 @@
 
 	/* Table initialisation */
 	$(document).ready(function() {
-		$('#example').dataTable( {
+		dtable = $('#example').dataTable( {
 			"sDom": "<'row-fluid'<'span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
 			"oLanguage": {
 				"sLengthMenu": "_MENU_ variants per page"
 			},
+			"bDeferRender": true,
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
 			"aoColumns": [ 
-				null,
-				null,
-				null,
-				null,
-				{"bSearchable": false},
-				{"bSearchable": false},
-				null,
-				null,
-				null,
-				{"bSearchable": false},
+				{"sTitle":"Chromosome"},
+				{"sTitle":"Start"},
+				{"sTitle":"Stop"},
+				{"sTitle":"dbSNP"},
+				{"sTitle":"Ref","bSearchable": false},
+				{"sTitle":"Alt","bSearchable": false},
+				{"sTitle":"Filters/Sets","bSearchable": true},
+				{"sTitle":"MQ","bSearchable": false},
+				{"sTitle":"id","bSearchable": false},
 			],
-			/*"oTableTools": {
-				"sSwfPath" : "/static/datatables/tabletools/media/swf/copy_csv_xls.swf",
-				"aButtons": [
-					"copy",
-					"print",
-				]
-			}*/
+			"bProcessing": true,
+        	"bServerSide": false,
+        	"sAjaxSource": "/samples/14006.p1/variants.json"
 		} );
-		$('example.rowlink').rowlink()
+		
 	} );
-		</script>
+</script>
+
 <style>
 .filter-tag {display: inline-block; 
 			 width: 10px;
@@ -186,21 +236,20 @@
 .Rare_variants {background-color: blue;}
 .Oroak_2012_exome {background-color: orange;}
 </style>
-{% endblock %}
-
-{% block content %}
-
-<div class="row-fluid">
-<div class="span2">
-	<form class="form-inline" action="#">
-  	<input id="set_search" class="span12" type="text" placeholder="Type to find sets..." data-provide="typeahead" autocomplete="off" />
-  	</form>
-</div>
-<div id="set_labels" class="span10">
-</div>
-</div>
-
 <script>
+
+function remove_filter(item){
+	sets[item].applied = false
+	var filter_string = "include_filters="
+	for (var set in sets){
+		if (sets[set].applied){
+			filter_string += sets[set].filter_name
+			filter_string += ";"
+		}
+	}
+	console.log( '/samples/14006.p1/variants.json?' + filter_string)
+	dtable.fnReloadAjax( '/samples/14006.p1/variants.json?' + filter_string);
+}
 
 function create_set_label(set_item){
 	id = set_item.filter_name
@@ -210,36 +259,47 @@ function create_set_label(set_item){
 	color = set_item.color
 	return '<div class="btn-group" id='+id+'>' + 
 		   '<button class="btn btn '+color+' no-hover">'+title+'</button>' + 
-		   '<button class="btn btn '+color+'" onClick=\'$("#'+id+'").remove()\'>x</button></div>'
-}
-
-var sets = {};
-$.getJSON('/filters.json', function(data){
+		   '<button class="btn btn '+color+'" onClick=\'$("#'+id+'").remove(); remove_filter("'+id+'")\'>x</button></div>'
+};
+var sets = {}
+$(document).ready(function() {
+	$.getJSON('/filters.json', function(data){
 							data = data["result"]
 							for (var i = 0; i < data.length; i++) {
 								sets[data[i].filter_name] = data[i]
 							}
-})
-
-$(document).ready(function() {
-	$('#set_search').typeahead({source: Object.keys(sets),
-								updater: function(item) {$('#set_labels').append(create_set_label(sets[item]))}
-							   }
-							  );
-})
+							$('#set_search').typeahead({'source': Object.keys(sets), 
+														'updater': function(item) {
+																		$('#set_labels').append(create_set_label(sets[item]));
+																		sets[item].applied = true
+																		var filter_string = "include_filters="
+																		for (var set in sets){
+																			if (sets[set].applied){
+																				filter_string += sets[set].filter_name
+																				filter_string += ";"
+																			}
+																		}
+																		console.log( '/samples/14006.p1/variants.json?' + filter_string)
+																		dtable.fnReloadAjax( '/samples/14006.p1/variants.json?' + filter_string);
+																	}});
+	});
+});
 </script>  
+{% endblock %}
 
-<table class="table table-hover table-condensed" id="example"  data-provides="rowlink">
-	{{ macros.table_header(["chrom","start","end","dbSNP","ref","alt","filter/sets (key)","type","gene","_id"]) }}
-	<tbody>
-	
-	{% for row in data %}
-		{{ make_row_link(row) }}
-	{% endfor %}
-	
-	</tbody>
-</table>
+{% block content %}
+	<div class="row-fluid">
+	<div class="span2">
+		<form class="form-inline" action="#">
+	  	<input id="set_search" class="span12" type="text" placeholder="Type to find sets..." data-provide="typeahead" autocomplete="off" />
+	  	</form>
+	</div>
+	<div id="set_labels" class="span10">
+	</div>
+	</div>
 
+	<table class="table table-hover table-condensed" id="example"  data-provides="rowlink">
+	</table>
 {% endblock %}
 
 {% macro make_row_link(row) %}

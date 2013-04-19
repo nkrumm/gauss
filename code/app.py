@@ -60,7 +60,8 @@ def variant_details():
 @app.route('/variants/<chrom>:<start>-<end>')
 @app.route('/variants/id:<variant_id>')
 @app.route('/samples/<sample_name>/variants', methods=['GET'])
-def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, variant_id=None):
+@app.route('/samples/<sample_name>/variants<type>', methods=['GET'])
+def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, variant_id=None, type=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
     if variant_id is not None:
         data = var_mgr.get_variant(variant_id)
@@ -74,10 +75,11 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
             if "exclude_filters" in request.args:
                 query["filter"] = {"$nin": request.args["exclude_filters"].split(";")}
             if "include_filters" in request.args:
-                if "filter" in query:
-                    query["filter"]["$in"] = request.args["include_filters"].split(";")
-                else:
-                    query["filter"] = {"$in": request.args["include_filters"].split(";")}
+                if len(request.args["include_filters"]) > 0:
+                    if "filter" in query:
+                        query["filter"]["$in"] = request.args["include_filters"].split(";")
+                    else:
+                        query["filter"] = {"$in": request.args["include_filters"].split(";")}
             
             
             projection = {"sample_name": True, 
@@ -98,9 +100,22 @@ def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, 
             chrom_int = int(chrom.lower().replace("chr",""))
             title="%s: %s - %s" % (chrom, start, end)
             data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
-        filter_mgr = filter_manager(db="test", conn=g.conn)
-        filters = filter_mgr.get_all_filters()
-        return render_template("view_variants.html", title=Markup(title), data=data, filters=filters)
+        if type is None:
+            filter_mgr = filter_manager(db="test", conn=g.conn)
+            filters = filter_mgr.get_all_filters()
+            return render_template("view_variants.html", title=Markup(title), data=data)
+        elif type == ".json":
+            # reformat the data
+            out = {}
+            out["aaData"] = []
+            column_list = ["chrom","start","end","id","ref","alt"]
+            for row in data:
+                row_data = [row.get(c,'') for c in column_list]
+                row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
+                row_data.extend([row["annotations"][a] for a in ["MQ"]])
+                row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
+                out["aaData"].append(row_data)
+            return jsonify(out)
 
 @app.route('/filters')
 def filters():
@@ -113,6 +128,10 @@ def jsonfilters():
     filter_mgr = filter_manager(db="test",conn=g.conn)
     rows = filter_mgr.get_all_filters()
     return jsonify(result=[i for i in rows])
+
+@app.route('/testpage')
+def test():
+    return render_template("test.html")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
