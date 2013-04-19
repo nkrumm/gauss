@@ -60,71 +60,57 @@ def variant_details():
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')
 @app.route('/variants/id:<variant_id>')
-@app.route('/samples/<sample_name>/variants', methods=['GET'])
-@app.route('/samples/<sample_name>/variants<type>', methods=['GET'])
-def get_variants(gene=None, sample_name=None, chrom=None, start=None, end=None, variant_id=None, type=None):
+@app.route('/samples/<sample_id>/variants')
+def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None, variant_id=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
     if variant_id is not None:
         data = var_mgr.get_variant(variant_id)
         return render_template("variant_details.html", data=data)
     else:
-        if sample_name is not None:
-            sample_mgr = sample_manager(db="test", conn=g.conn)
-            sample_id = sample_mgr.get_sample(sample_name)["_id"]
-            query = {"sample_id":sample_id}
+        if sample_id is not None:
+            title = "%s (All Variants)" % sample_id
+            query_string = "sample_id=%s" % sample_id
 
-            if "exclude_filters" in request.args:
-                query["filter"] = {"$nin": request.args["exclude_filters"].split(";")}
-            if "include_filters" in request.args:
-                if len(request.args["include_filters"]) > 0:
-                    if "filter" in query:
-                        query["filter"]["$in"] = request.args["include_filters"].split(";")
-                    else:
-                        query["filter"] = {"$in": request.args["include_filters"].split(";")}
-            
-            
-            projection = {"sample_name": True, 
-                          "id":True,
-                          "ref": True,
-                          "alt": True,
-                          "chrom":True,
-                          "start":True,
-                          "filter": True,
-                          "annotations.MQ":True}
-
-            data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
-            title = "%s (All Variants)" % sample_name
         elif gene is not None:
-            data = var_mgr.get_variants_by_gene(gene)
             title = "<em>%s</em> (All Variants)" % gene
+            query_string = "gene=%s" % gene
+
         elif chrom is not None:
             chrom_int = int(chrom.lower().replace("chr",""))
             title="%s: %s - %s" % (chrom, start, end)
-            data = var_mgr.get_variants_by_position(chrom_int, int(start), int(end))
-        if type is None:
-            filter_mgr = filter_manager(db="test", conn=g.conn)
-            filters = filter_mgr.get_all_filters()
-            return render_template("view_variants.html", title=Markup(title), sample_id=sample_name)
-        elif type == ".json":
-            # reformat the data
-            out = {}
-            out["aaData"] = []
-            column_list = ["chrom","start","end","id","ref","alt"]
-            for row in data:
-                row_data = [row.get(c,'') for c in column_list]
-                row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
-                row_data.extend([row["annotations"][a] for a in ["MQ"]])
-                row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
-                out["aaData"].append(row_data)
-            return jsonify(out)
+            query_string = "chrom=%s&start=%s&end=%s" % (chrom, start, end)
+
+        return render_template("view_variants.html", title=Markup(title), query_string=Markup(query_string))
+
+def is_arg(argname):
+    return (argname in request.args) and (len(request.args[argname]) > 0)
 
 @app.route('/_variants.json', methods=['GET'])
-def json_variants():
-    var_mgr = variant_manager(db="test",conn=g.conn)
-    sample_mgr = sample_manager(db="test", conn=g.conn)
-    sample_id = sample_mgr.get_sample(request.args["sample_id"])["_id"]
+def json_variants(return_query=False):
     query = defaultdict(lambda: defaultdict(list))
-    query["sample_id"] = sample_id
+
+    var_mgr = variant_manager(db="test",conn=g.conn)
+    # INITIAL DATA
+    if is_arg("sample_id"):
+        sample_mgr = sample_manager(db="test", conn=g.conn)
+        sample_id = sample_mgr.get_sample(request.args["sample_id"])["_id"]
+        query["sample_id"] = sample_id
+        title = "%s (All Variants)" % request.args["sample_id"]
+
+    if is_arg("gene"):
+        query["annotations.gene"] = request.args["gene"]
+        title = "<em>%s</em> (All Variants)" % request.args["gene"]
+
+    if is_arg("chrom") and is_arg("start") and is_arg("end"):
+        chrom = request.args["chrom"].lower().replace("chr","")
+        #chrom = request.args["chrom"]
+        start = int(request.args["start"])
+        end = int(request.args["end"])
+        query["chrom"] = chrom
+        query["start"] = {'$gte': start, '$lte': end}
+        title="%s: %d - %d" % (chrom, start, end)
+
+    # FILTERS
     if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
         query["filter"]["$nin"] = request.args["exclude_filters"].split(";")
     if ("include_filters" in request.args)  and len(request.args["include_filters"]) > 0:
@@ -150,8 +136,15 @@ def json_variants():
         row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
         out["aaData"].append(row_data)
     
-    return jsonify(out)
+    
+    if return_query:
+        return json_util.dumps(query)
+    else:
+        return jsonify(out)
 
+@app.route('/_variants_query.json', methods=['GET'])
+def variant_query_test():
+    return json_variants(return_query=True)
 
 @app.route('/filters')
 def filters():

@@ -39,9 +39,9 @@
 			],
 			"bProcessing": true,
         	"bServerSide": false,
-        	"sAjaxSource": "/_variants.json?sample_id="+sample_id
+        	"sAjaxSource": "/_variants.json?" + query_string
 		} );
-		
+		console.log("/_variants.json?" + query_string)	
 	} );
 </script>
 
@@ -59,7 +59,7 @@
 <script>
 
 var sets = {}
-var sample_id = "{{ sample_id }}"
+var query_string = "{{ query_string }}"
 
 function create_set_label(set_item){
 	id = set_item.filter_name
@@ -87,16 +87,16 @@ function remove_filter(item){
 	$("#"+item).remove();
 	sets[item].applied = false
 	filter_string = build_filter_string(sets)
-	console.log('/_variants.json?sample_id=' + sample_id + "&" + filter_string)
-	dtable.fnReloadAjax( '/_variants.json?sample_id=' + sample_id + "&" + filter_string);
+	console.log('/_variants.json?' + query_string + "&" + filter_string)
+	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string);
 }
 
 function add_filter(item){
 	$('#set_labels').append(create_set_label(sets[item]));
 	sets[item].applied = true
 	filter_string = build_filter_string(sets)
-	console.log('/_variants.json?sample_id=' + sample_id + "&" + filter_string)
-	dtable.fnReloadAjax( '/_variants.json?sample_id=' + sample_id + "&" + filter_string);
+	console.log('/_variants.json?' + query_string + "&" + filter_string)
+	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string);
 }
 
 /* download the filters from server, populate the sets[] array and set up the typeahead*/
