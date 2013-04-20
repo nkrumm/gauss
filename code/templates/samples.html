@@ -6,9 +6,29 @@
 All Samples
 {% endblock %}
 
+{% block header %}
+	<link href="/static/datatables/datatables.view_variants_specific.css" rel="stylesheet" media="screen">
+	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
+	<script src="/static/datatables/media/js/ColVis.min.js"></script>
+	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
+
+	<script>
+
+
+	/* Table initialisation */
+	var dtable;
+	$(document).ready(function() {
+		dtable = $('#sample_list').dataTable( {
+			"sDom": "<'row-fluid'<'span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
+			"sPaginationType": "bootstrap",
+		} );
+	} );
+</script>
+{% endblock %}
+
 {% block content %}
 
-<table class="table table-hover table-condensed" data-provides="rowlink">
+<table class="table table-hover table-condensed" id="sample_list">
 	{{ macros.table_header(columns) }}
 	<tbody>
 	{% for row in sample_rows %}
@@ -22,8 +42,10 @@ All Samples
 {% macro make_row_link(row) %}
   <tr>
     {% for name in columns %}
-	    {% if name == "identifier" %}
+	    {% if name == "sample_id" %}
 	    <td><a href="/samples/{{ row['identifier']['sample_id'] }}">{{ row['identifier']['sample_id'] }}</a></td>
+	    {% elif name =="study_name" %}
+	    <td><a href="/studies/{{ row['identifier']['study_name'] }}">{{ row['identifier']['study_name'] }}</a></td>
 	    {% else %}
 	    <td>{{ row[name] }}</td>    
 	    {% endif %}

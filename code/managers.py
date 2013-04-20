@@ -70,7 +70,7 @@ class sample_manager(manager_template):
             query["identifier.study_name"] = study_name
         if study_id is not None:
             query["identifier.study_id"] = study_id
-        return self.documents.find(query, {"identifier.sample_id": True, "attributes":True , "_id": False})
+        return self.documents.find(query, {"identifier.sample_id": True,"identifier.study_name": True, "attributes":True , "_id": False})
 
     def insert_sample(self, sample_id, study_id, files = None):
         """

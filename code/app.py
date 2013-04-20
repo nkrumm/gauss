@@ -35,7 +35,7 @@ def study_info(study_name):
 def samples():
     mgr = sample_manager(db="test",conn=g.conn)
     rows = mgr.get_all_samples()
-    return render_template("samples.html", sample_rows=rows, columns=["identifier", "attributes"])
+    return render_template("samples.html", sample_rows=rows, columns=["sample_id","study_name", "attributes"])
 
 
 @app.route('/samples/<sample_id>')
