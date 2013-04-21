@@ -98,7 +98,7 @@ def json_variants(return_query=False):
         title = "%s (All Variants)" % request.args["sample_id"]
 
     if is_arg("gene"):
-        query["annotations.gene"] = request.args["gene"]
+        query["annotations.EFF.g"] = request.args["gene"]
         title = "<em>%s</em> (All Variants)" % request.args["gene"]
 
     if is_arg("chrom") and is_arg("start") and is_arg("end"):
@@ -123,7 +123,7 @@ def json_variants(return_query=False):
                       "chrom":True,
                       "start":True,
                       "filter": True,
-                      "annotations.MQ":True}
+                      "annotations.EFF":True}
 
     data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
     out = {}
@@ -132,7 +132,13 @@ def json_variants(return_query=False):
     for row in data:
         row_data = [row.get(c,'') for c in column_list]
         row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
-        row_data.extend([row["annotations"][a] for a in ["MQ"]])
+
+        genes = set(map(lambda x: "%s (%s)" % (x.get("g",None),x.get("e",None)), row["annotations"]["EFF"]))# - set([None])
+
+        if genes is not None:
+            row_data.append(", ".join(genes))
+        else:
+            row_data.append("")
         row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
         out["aaData"].append(row_data)
     
