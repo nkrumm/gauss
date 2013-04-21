@@ -22,7 +22,30 @@ def read_vcf(vcf_filename):
     return df, vcf_header_lines
 
 def parse_info(info_field):
-  return {x.split("=")[0]:x.split("=")[1] for x in info_field.split(";")}  
+    return {x.split("=")[0]:x.split("=")[1] for x in info_field.split(";")}  
+
+def parse_annotations(info_field):
+    field_list = info_field.split(";")
+    out = {}
+    for field in field_list:
+        key,value = field.split("=")
+        if key == "EFF":
+            # this is the SNPEFF field, parse it appropriately
+            #NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Gtt/Att|V5I|293|HNRNPCL1||CODING|NM_001013631.1|2|1),
+            EFF_LIST = []
+            for effect in value.split(","):
+                EFF = {}
+                EFF["e"], t = effect.split("(",2)
+                try:
+                    # no optional warning field
+                    _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _ = t.split("|")
+                except:
+                   _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _, EFF["err"][:-1] = t.split("|")
+                EFF_LIST.append(EFF)
+            out["EFF"] = EFF_LIST
+        else:
+            out[key] = value # TODO, get the formatting of values down here!
+    return out
 
 
 if __name__ == "__main__":
@@ -62,12 +85,11 @@ if __name__ == "__main__":
     finally:
         # insert the new meta data
         file_dict = {"filename": args.vcf,
-                 "filetype": "vcf",
-                 "metadata": {"vcf_header": header_data},
-                 "filter_name": args.filter_name    ,
-                 "date_imported": datetime.datetime.today()}
+                     "filetype": "vcf",
+                     "metadata": {"vcf_header": header_data},
+                     "filter_name": args.filter_name,
+                     "date_imported": datetime.datetime.today()}
         sample_mgr.add_file_to_sample(args.sample_name, file_dict)
-
 
 
     for ix, row in vcf_data.iterrows():
@@ -76,14 +98,21 @@ if __name__ == "__main__":
         else:
             filters = [args.filter_name]
 
+        if row["ID"] != ".":
+            id_tag = row["ID"]
+        else:
+            id_tag = None
+
+        annotations = parse_annotations(row["INFO"])
+
         var_mgr.insert_variant_from_vcf(sample_id=sample_id, 
                                         sample_name=args.sample_name, 
                                         chrom=str(row["CHROM"]),
                                         pos=int(row["POS"]), 
-                                        id=row["ID"],
+                                        id=id_tag,
                                         ref=row["REF"],
                                         alt=row["ALT"],
                                         qual=row["QUAL"],
                                         filters=filters,
                                         data=row["DATA"],
-                                         **parse_info(row["INFO"]))
+                                         **annotations)
