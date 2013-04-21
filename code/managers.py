@@ -151,7 +151,8 @@ class variant_manager(manager_template):
         var.sample_name = sample_name
         var.chrom = chrom
         var.start = pos
-        var.id = id
+        if id is not None:
+            var.id = id
         var.ref = ref
         var.alt = alt
         var.qual = qual
