@@ -40,8 +40,9 @@ def parse_annotations(info_field):
                     # no optional warning field
                     _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _ = t.split("|")
                 except:
-                   _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _, EFF["err"][:-1] = t.split("|")
-                EFF_LIST.append(EFF)
+                   _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _, EFF["err"][:-1] = t.split("|") #-1 removes trailing ")"
+                # clear out any empty fields!
+                EFF_LIST.append({k:v for k,v in EFF.iteritems() if v is not ''})
             out["EFF"] = EFF_LIST
         else:
             out[key] = value # TODO, get the formatting of values down here!
@@ -79,8 +80,7 @@ if __name__ == "__main__":
         sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
     except TypeError:
         # sample doesnt exist yet, insert it!
-        print args.sample_name, study_id
-        sample_mgr.insert_sample(args.sample_name, study_id)
+        sample_mgr.insert_sample(args.sample_name, study_id, args.study_name)
         sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
     finally:
         # insert the new meta data
