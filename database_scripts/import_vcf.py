@@ -56,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--study_desc", type=str, action="store", required=False, default="Study Description")
     parser.add_argument("--filter_name", type=str, action="store", required=True)
     parser.add_argument("--sample_name", type=str, action="store", required=True)
+    parser.add_argument("--skip_samples", type=bool, action="store", required=False, default=False)
 
     args = parser.parse_args()
     print args
@@ -78,6 +79,9 @@ if __name__ == "__main__":
 
     try:
         sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
+        if args.skip_samples:
+            print "Already imported sample!"
+            sys.exit(0)
     except TypeError:
         # sample doesnt exist yet, insert it!
         sample_mgr.insert_sample(args.sample_name, study_id, args.study_name)
