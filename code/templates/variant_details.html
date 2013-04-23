@@ -2,6 +2,9 @@
 {% extends "layout.html" %}
 
 {% set active_page = "view_variants" %}
+{% block header%}
+<link href="/static/custom.css" rel="stylesheet" media="screen">
+{% endblock %}
 {% block title %}
 Variant Details
 {% endblock %}
@@ -23,13 +26,26 @@ Variant Details
   {% endif %}
 </dl>
 <h3>SnpEff Annotations (Functional predictions)</h3>
-<dl class="dl-horizontal">
-  {% for row in data["annotations"]["EFF"] %}
-    <dt>{{ row["e"] }}</dt>
-      <dd>{{ row}}</dd>
-
-  {% endfor %}
-</dl>
+<div class="row-fluid">
+  <div class="span8">
+<table class="table">
+  <thead>
+    <th>Type</th><th>Gene</th><th>AA Change</th><th>Codon Change</th><th>Transcript</th><th>Exon #</th>
+  </thead>
+  <tbody>
+    {% for row in data["annotations"]["EFF"] %}
+      <tr>
+        <td><span class="label impact-tag {{ row['effect_code'] }}">{{row["e"]}}</span></td>
+        <td>{{row["g"]}}</td>
+        <td>{{row["aa"]}}</td>
+        <td>{{row["cc"]}}</td>
+        <td>{{row["tx"]}}</td>
+        <td>{{row["r"]}}</td>
+      <tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
 <h3>VCF Annotations</h3>
 <dl class="dl-horizontal">
   {% for row in data["annotations"] %}
