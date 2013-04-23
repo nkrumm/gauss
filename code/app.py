@@ -127,12 +127,56 @@ def json_variants(return_query=False):
                       "start":True,
                       "filter": True,
                       "annotations.EFF":True}
+    if is_arg("group") and (request.args["group"] == "variant"):
+        grouped = True
+        data = var_mgr.documents.aggregate([{"$match": query},
+                                      
+                                      {"$group": {"_id":{"chrom":"$chrom",
+                                                      "start":"$start",
+                                                      "end":"$end",
+                                                      "id":"$id",
+                                                      "ref":"$ref",
+                                                      "alt":"$alt",
+                                                      },
+                                               "count": { "$sum": 1},
+                                               "annotations_list": {"$addToSet":"$annotations.EFF"},
+                                               "sample_name_list": {"$addToSet":"$sample_name"},
+                                               "filter":  {"$addToSet":"$filter"},
+                                               }},
+                                      {"$project":{
+                                            "_id": {"$add": [0]}, # this is a stupid hack to put a literal/static field in
+                                            "chrom": "$_id.chrom",
+                                            "start": "$_id.start",
+                                            "end": "$_id.end",
+                                            "ref": "$_id.ref",
+                                            "alt": "$_id.alt",
+                                            "id": "$_id.id",
+                                            "count": "$count",
+                                            "annotations": "$annotations_list",
+                                            "sample_name":"$sample_name_list",
+                                            "filter": "$filter"
 
-    data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
+                                      }},
+                                      {"$sort": {"chrom": 1, "start": 1}}
+
+                                      ])
+        #return jsonify(data)
+        data = data["result"]
+
+    else:
+        grouped = False
+        data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
+
+        
     out = {}
     out["aaData"] = []
     column_list = ["chrom","start","end","sample_name","id","ref","alt"]
     for row in data:
+        if grouped:
+            row["annotations"] = {"EFF":row["annotations"][0]}
+            row["filter"] = row["filter"][0]
+            row["sample_name"] = int(row["count"]) #", ".join(row["sample_name"])
+
         row_data = [row.get(c,'') for c in column_list]
         row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
         highest_rank = 0
