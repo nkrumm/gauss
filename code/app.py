@@ -4,6 +4,7 @@ import operator
 from collections import defaultdict
 from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
 from bson import json_util
+from constants import VARIANT_EFFECTS, VARIANT_RANKS, VARIANT_SHORTNAMES
 
 app = Flask(__name__)
 
@@ -65,6 +66,8 @@ def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None, va
     var_mgr = variant_manager(db="test",conn=g.conn)
     if variant_id is not None:
         data = var_mgr.get_variant(variant_id)
+        for ix, row in enumerate(data["annotations"]["EFF"]):
+            data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
         return render_template("variant_details.html", data=data)
     else:
         if sample_id is not None:
@@ -132,13 +135,22 @@ def json_variants(return_query=False):
     for row in data:
         row_data = [row.get(c,'') for c in column_list]
         row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
-
-        genes = set(map(lambda x: "%s (%s)" % (x.get("g",None),x.get("e",None)), row["annotations"]["EFF"]))# - set([None])
-
-        if genes is not None:
-            row_data.append(", ".join(genes))
-        else:
-            row_data.append("")
+        highest_rank = 0
+        effect_str = ""
+        gene_str = ""
+        
+        for eff in row["annotations"]["EFF"]:
+            eff_code = eff.get("e", None)
+            eff_type = VARIANT_EFFECTS[eff_code]
+            eff_rank = VARIANT_RANKS[eff_type]
+            if eff_rank > highest_rank:
+                eff_gene = eff.get("g", None)
+                if (eff_type in ["high", "moderate", "low"]) and (eff_gene is not None):
+                    gene_str = eff_gene
+                    effect_str = "<span class='label impact-tag %s'>%s</span>" % (eff_type, VARIANT_SHORTNAMES[eff_code])
+        
+        row_data.append(gene_str)
+        row_data.append("<a href='/variants/id:%s'>%s</a>" % (row["_id"], effect_str)) 
         row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
         out["aaData"].append(row_data)
     
