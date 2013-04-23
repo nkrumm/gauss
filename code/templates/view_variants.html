@@ -7,35 +7,66 @@
 {% endblock %}
 
 {% block header %}
+	<link href="/static/custom.css" rel="stylesheet" media="screen">
 	<link href="/static/datatables/datatables.view_variants_specific.css" rel="stylesheet" media="screen">
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
 	<script src="/static/datatables/media/js/ColVis.min.js"></script>
 	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
-
+	<style>
+	.toolbar-pills .active a,
+	.toolbar-pills .active a:hover {
+    	background-color: #888888;
+	}
+	</style>
 	<script>
+	var grouping_state = "genotype"
 
+	function toggle_grouping(grouping){
+		if (grouping == "variant"){
+			dtable.fnReloadAjax('/_variants.json?' + query_string  + filter_string + '&group=variant');
+			console.log('/_variants.json?' + query_string + filter_string +  '&group=variant')
+			grouping_state = "variant"
+			$("#genotype_pill").removeClass("active")
+			$("#variant_pill").addClass("active")
+		}
+		else{
+			dtable.fnReloadAjax('/_variants.json?' + query_string + filter_string);
+			console.log('/_variants.json?' + query_string + filter_string)
+			grouping_state = "genotype"
+			$("#genotype_pill").addClass("active")
+			$("#variant_pill").removeClass("active")			
+		}
+	}
 
+	function build_toolbar(){
+		html_str = '<ul class="nav nav-pills toolbar-pills">';
+		html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
+		html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul>';
+		return html_str
+	}
 	/* Table initialisation */
 	var dtable;
 	$(document).ready(function() {
 		dtable = $('#example').dataTable( {
-			"sDom": "<'row-fluid'<'span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
+			"sDom": "<'row-fluid'<'toolbar span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
 			"oLanguage": {
 				"sLengthMenu": "_MENU_ variants per page"
 			},
 			"bDeferRender": true,
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
+			"bStateSave": true,
 			"aoColumns": [ 
 				{"sTitle":"Chrom", "sWidth":"5%"},
 				{"sTitle":"Start", "sWidth":"7.5%"},
 				{"sTitle":"Stop", "sWidth":"7.5%"},
-				{"sTitle":"Sample","bSearchable": true, "sWidth":"10%"},
+				{"sTitle":"Sample","bSearchable": true, "sWidth":"10%","sType": "numeric"},
 				{"sTitle":"dbSNP","bSearchable": true, "sWidth":"10%"},
 				{"sTitle":"Ref","bSearchable": false, "sWidth":"3%", "bSortable": false},
 				{"sTitle":"Alt","bSearchable": false, "sWidth":"3%", "bSortable": false},
 				{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%"},
-				{"sTitle":"Genes","bSearchable": true, "sWidth":"29%"},
+				{"sTitle":"Gene","bSearchable": true, "sWidth":"10%"},
+				{"sTitle":"Effect <a href='#'>highest</a> | <a href='#'>all</a>","bSearchable": true, "sWidth":"15%"},
 				{"sTitle":"id","bSearchable": false},
 			],
 			"bProcessing": true,
@@ -43,6 +74,7 @@
         	"sAjaxSource": "/_variants.json?" + query_string
 		} );
 		console.log("/_variants.json?" + query_string)	
+		$("div.toolbar").html(build_toolbar());
 	} );
 </script>
 
@@ -52,15 +84,17 @@
 			 height: 10px;
 			 background-color: gray;
 			 margin: 1px;}
-.GATK_import {background-color: red;}
+.GATK_filter {background-color: red;}
 .Rare_variants {background-color: blue;}
 .ORoak_denovo_2012 {background-color: orange;}
+
 </style>
 
 <script>
 
 var sets = {}
 var query_string = "{{ query_string }}"
+var filter_string = ""
 
 function create_set_label(set_item){
 	id = set_item.filter_name
@@ -120,7 +154,7 @@ $(document).ready(function() {
 	<div class="row-fluid">
 	<div class="span2">
 		<form class="form-inline" action="#">
-	  	<input id="set_search" class="span12" type="text" placeholder="Type to find sets..." data-provide="typeahead" autocomplete="off" />
+	  	<input id="set_search" class="span12" accesskey='s' type="text" placeholder="Type to find sets..." data-provide="typeahead" autocomplete="off" />
 	  	</form>
 	</div>
 	<div id="set_labels" class="span10">
