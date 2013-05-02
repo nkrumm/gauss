@@ -166,6 +166,8 @@ def json_variants(return_query=False):
                     query["annotations.EFF.e"]["$in"]=["FRAME_SHIFT", "STOP_GAINED"]
                 elif filter_id == "autosomal":
                     query["chrom"]["$nin"]=["X","Y"]
+                elif filter_id == "sex_chrs":
+                    query["chrom"]["$in"]=["X","Y"]
                 elif filter_id == "dbSNP":
                     query["id"] = None
                 elif filter_id == "genic":
@@ -175,6 +177,8 @@ def json_variants(return_query=False):
                     if not is_arg("gene"):  # only do this if not already a gene query
                         query["annotations.EFF.g"]["$ne"]=None
                     query["annotations.EFF.e"]["$nin"] = ["INTRON","UTR-5","UTR-3","INTRAGENIC","UTR_3_PRIME","UTR_5_PRIME"]
+                elif filter_id == "GATK_filter":
+                    query["filter"]["$nin"].append(filter_id)
 
 
     projection = {"sample_name": True, 
