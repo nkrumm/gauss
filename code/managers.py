@@ -169,25 +169,32 @@ class variant_manager(manager_template):
 
     def get_variant(self, variant_id):
         return self.documents.find_one({"_id":ObjectId(variant_id)})
-    
+
     def get_variants_by_gene(self, gene):
         return self.documents.find({"annotations.gene":gene})
 
-    def get_variants_by_position(self, chrom, start, end, sort=True):
+    def get_variants_by_position(self, chrom, start, end=None, sort=True):
+        if end is None:
+            return self.documents.find({"chrom":str(chrom), "start": int(start)}).sort([("chrom", 1), ("start", 1)])
         if sort:
-            return self.documents.find({"chrom":chrom, "start": {'$gte': start}, "end": {'$lte': end}}).sort([("chrom", 1), ("start", 1)])
+            return self.documents.find({"chrom":str(chrom), "start": {'$gte': int(start)}, "end": {'$lte': int(end)}}).sort([("chrom", 1), ("start", 1)])
         else:
-            return self.documents.find({"chrom":chrom, "start": {'$gte': start}, "end": {'$lte': end}})
+            return self.documents.find({"chrom":str(chrom), "start": {'$gte': int(start)}, "end": {'$lte': int(end)}})
 
     def get_sample_variant_summary(self, sample_id):
         """
         return overview of variant counts for a sample
         """
-        data = self.documents.aggregate([{ "$match" : {"sample_id":ObjectId(sample_id)}} , {"$group" : {"_id": "$annotations.type",  "count": { "$sum": 1 } } }])
-        out = {}
-        for row in data["result"]:
-            out[row["_id"]] = row["count"]
-        return out
+        #data = self.documents.aggregate([{ "$match" : {"sample_id":ObjectId(sample_id)}} , {"$group" : {"_id": "$annotations.EFF.e",  "count": { "$sum": 1 } } }])
+        data = self.documents.aggregate([{"$match":{"sample_id":ObjectId(sample_id)}},
+                                         {"$unwind":"$annotations.EFF"},
+                                         {"$group":{"_id": "$annotations.EFF.e", "count":{"$sum":1}}}])
+        
+        return data["result"]
+        #out = {}
+        #for row in data["result"]:
+        #    out[row["_id"]] = row["count"]
+        #return out
 
 
 
