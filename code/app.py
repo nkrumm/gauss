@@ -66,7 +66,9 @@ def samples_info(sample_id):
 
 @app.route('/variants/')
 def variants():
-    return render_template("variants.html")
+    var_mgr = variant_manager(db="test",conn=g.conn)
+    stats = var_mgr.get_db_stats()
+    return render_template("variants.html", stats=stats)
 
 @app.route('/genotypes/id:<genotype_id>')
 def genotype_details(genotype_id):
@@ -92,23 +94,27 @@ def variant_details(chrom, start, end=None):
         variant_data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
     return render_template("variant_details.html", variant_data=variant_data, genotype_data=genotype_data)
 
+@app.route('/all_variants/')    
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')
 @app.route('/samples/<sample_id>/variants')
 def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
     if sample_id is not None:
-        title = "%s (All Variants)" % sample_id
+        title = "%s" % sample_id
         query_string = "sample_id=%s" % sample_id
 
     elif gene is not None:
-        title = "<em>%s</em> (All Variants)" % gene
+        title = "<em>%s</em>" % gene
         query_string = "gene=%s" % gene
 
     elif chrom is not None:
         chrom_int = int(chrom.lower().replace("chr",""))
         title="%s: %s - %s" % (chrom, start, end)
         query_string = "chrom=%s&start=%s&end=%s" % (chrom, start, end)
+    else:
+        title = 'All variants'
+        query_string = ""
 
     filter_mgr = filter_manager(db="test",conn=g.conn)
     filters = filter_mgr.get_all_filters()
@@ -141,6 +147,11 @@ def json_variants(return_query=False):
         query["chrom"] = chrom
         query["start"] = {'$gte': start, '$lte': end}
         title="%s: %d - %d" % (chrom, start, end)
+
+    if is_arg("limit"):
+        limit = int(request.args["limit"])
+    else:
+        limit = 1000
 
     # FILTERS
     if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
@@ -213,7 +224,12 @@ def json_variants(return_query=False):
 
     else:
         grouped = False
-        data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
+        if len(query) == 0:
+            #query = {"_id":{"$ne":""}}
+            query = {}
+            data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit)
+        else:
+            data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit).sort([("chrom", 1), ("start", 1)])
     
         
     out = {}
