@@ -196,6 +196,9 @@ class variant_manager(manager_template):
         #    out[row["_id"]] = row["count"]
         #return out
 
+    def get_db_stats(self):
+        return self.conn[self.db].command("collstats", self.collection)
+
 
 
 class filter_manager(manager_template):

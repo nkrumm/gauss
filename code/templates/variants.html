@@ -5,22 +5,34 @@
 {% block title %}
 	Variants
 {% endblock %}
+{% block header %}
+<script>
+  $(document).ready(function() {
+      $('#search_field').focus();
+      $("#search_form").submit(function(){
+        window.location.href="/variants/" + $("#search_field").val();
+        return false;
+    });
+  });
+</script>
+{% endblock %}
 
 {% block content %}
+  <legend>All variants</legend>
+  <a href='/all_variants/' class='btn'>View all variants</a>
 
-    <legend>Search for Variants</legend>
+  <legend>Search for Variants</legend>
     <form class="form-search" id="search_form">
   		<input type="text" id="search_field" class="input-xlarge search-query" placeholder="Gene Name or Chr:Start-End">
   		<button type="submit" class="btn btn-primary">Search</button>
 	</form>
-	<script>
-	$(document).ready(function() {
-    	$('#search_field').focus();
-    	$("#search_form").submit(function(){
-  			window.location.href="/variants/" + $("#search_field").val();
-  			return false;
-		});
-	});
 
-	</script>
+  
+  <legend>Overall statistics</legend>
+  <dl class="dl-horizontal">
+  <dt>Number of variants:</dt>
+    <dd>{{ stats["count"]}}</dd>
+  <dt>Storage Size:</dt>
+    <dd>{{ (stats["storageSize"] / (1024*1024*1024)) | int | round(1) }} GB</dd>
+
 {% endblock %}
