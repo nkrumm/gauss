@@ -1,0 +1,72 @@
+{% import 'macros.html' as macros %}
+{% extends "layout.html" %}
+
+{% set active_page = "view_variants" %}
+{% block header%}
+<link href="/static/custom.css" rel="stylesheet" media="screen">
+{% endblock %}
+{% block title %}
+Genotype Details
+{% endblock %}
+
+{% block content %}
+
+
+<h3>Basic Information</h3>
+<dl class="dl-horizontal">
+  <dt>Position</dt>
+    <dd>chr{{ data["chrom"] }}:{{data["start"]}}-{{data["end"]}}</dd>
+  <dt>Sample ID</dt>
+    <dd><a href='/samples/id:{{ data["sample_id"] }}'>{{ data["sample_name"] }}</a></dd>
+  <dt>Alt / Ref</dt>
+    <dd>{{ data["alt"]}}  / {{ data["ref"] }}</dd>
+  {% if "filter" in data %}
+  <dt>Filters/Sets</dt>
+    <dd>{{ data["filter"] | join(', ')}}</dd>
+  {% endif %}
+
+  {% if "id" in data %}
+    <dt>dbSNP</dt>
+      <dd><a href="http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={{ data["id"]|replace('rs','')}}">{{ data["id"]|default("")}}</a></dd> 
+  {% endif %}
+</dl>
+
+
+<h3>SnpEff Annotations (Functional predictions)</h3>
+<div class="row-fluid">
+  <div class="span8">
+<table class="table">
+  <thead>
+    <th>Type</th><th>Gene</th><th>AA Change</th><th>Codon Change</th><th>Transcript</th><th>Exon #</th>
+  </thead>
+  <tbody>
+    {% for row in data["annotations"]["EFF"] %}
+      <tr>
+        <td><span class="label impact-tag {{ row['effect_code'] }}">{{row["e"]}}</span></td>
+        <td><a href="/variants/{{row["g"]}}">{{row["g"]}}</a></td>
+        <td>{{row["aa"]}}</td>
+        <td>{{row["cc"]}}</td>
+        <td>{{row["tx"]}}</td>
+        <td>{{row["r"]}}</td>
+      <tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+
+
+<h3>VCF Annotations</h3>
+<dl class="dl-horizontal">
+  {% for row in data["annotations"] %}
+    {% if row != "EFF" %}
+    <dt>{{ row }}</dt>
+      <dd>{{ data["annotations"][row]}}</dd>
+    {% endif %}
+  {% endfor %}
+</dl>
+
+<h3>Record</h3>
+{{ data | pprint(verbose=True)}}
+
+{% endblock %}
