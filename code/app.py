@@ -1,12 +1,20 @@
 from flask import Flask
-from flask import render_template, Markup, g, request, jsonify
+from flask import render_template, Markup, g, request, jsonify, redirect
 import operator
+import os
 from collections import defaultdict
 from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
+import annotation
 from bson import json_util
 from constants import VARIANT_EFFECTS, VARIANT_RANKS, VARIANT_SHORTNAMES
+import numpy as np
+from werkzeug import secure_filename
+
+UPLOAD_FOLDER = '/Volumes/achiever_vol2/UPLOADS/'
+ALLOWED_EXTENSIONS = set(['vcf','variant','txt','bed'])
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.before_request
 def before_request():
@@ -256,9 +264,34 @@ def json_variants(return_query=False):
 def variant_query_test():
     return json_variants(return_query=True)
 
-@app.route('/filters')
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+
+@app.route('/filters', methods=['GET', 'POST'])
 def filters():
     filter_mgr = filter_manager(db="test",conn=g.conn)
+
+    if request.method == 'POST':
+        file_obj = request.files['file']
+        filetype = request.form["filetype"]
+        filter_name = request.form["filter_name"]
+        filter_desc = request.form["filter_desc"]
+        if file_obj and allowed_file(file_obj.filename):
+            filename = secure_filename(file_obj.filename)
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file_obj.save(save_path)
+            
+            filter_mgr.create_filter(filter_name, filter_desc)
+            if filetype=='gene':
+                worker = annotation.GeneAnnotationWorker(save_path, "test", g.conn)
+                worker.start(filter_name)
+
+        redirect('/filters')
+
     rows = filter_mgr.get_all_filters()
     return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added","color"])
 

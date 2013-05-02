@@ -140,7 +140,8 @@ class Filter(Document):
         "filter_name": basestring,
         "description": basestring,
         "type": basestring,
-        "stats": dict,
+        "color": basestring,
+        "prefix": basestring,
         "date_added": datetime.datetime
     }
 

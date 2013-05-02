@@ -212,13 +212,16 @@ class filter_manager(manager_template):
             doctype=self.document_type)
 
     def get_all_filters(self):
-        return self.documents.find({},{"_id":0})
+        return self.documents.find({},{"_id":0,"date_added":0})
 
     def get_filter(self, filter_name):
         return self.documents.find({"filter_name": filter_name})
 
-    def create_filter(self, filter_name, filter_description):
+    def create_filter(self, filter_name, filter_description, prefix='in', filter_type='set', color='btn-warning'):
         filter_doc = self.new_document()
         filter_doc.filter_name = filter_name
         filter_doc.description = filter_description
+        filter_doc.prefix = prefix
+        filter_doc.type = filter_type
+        filter_doc.color = color
         self.insert(filter_doc)

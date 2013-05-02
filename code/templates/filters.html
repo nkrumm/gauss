@@ -14,7 +14,7 @@ function select_type(btn){
 	$("#type_buttons").children().removeClass("active")
 	$("#type_buttons").children().removeClass("btn-info")
 	$(btn).addClass('btn-info active');
-
+	console.log("selecting")
 }
 
 
@@ -44,34 +44,35 @@ function select_type(btn){
     		<h3 id="addFilterModalLabel">Add a new filter/set:</h3>
   		</div>
   	    <div class="modal-body">
-			<form id='upload_form' class="form-horizontal" action='/_upload'>
+			<form id='upload_form' class="form-horizontal" action="/filters" method="post" enctype="multipart/form-data">
 			<div class="control-group">
 				<label class="control-label" for="inputfile"><b>File and Type</b></label>
     			<div class="controls">
 				    <div class="fileupload fileupload-new" data-provides="fileupload">
 					  <div class="input-append">
 					    <div class="uneditable-input span3"><i class="icon-file fileupload-exists"></i> <span class="fileupload-preview"></span></div>
-					    <span class="btn btn-file"><span class="fileupload-new">Select file</span><span class="fileupload-exists">Change</span><input id='file-input' type="file" /></span><a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
+					    <span class="btn btn-file"><span class="fileupload-new">Select file</span><span class="fileupload-exists">Change</span><input name='file' type="file" /></span><a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
 					  </div>
 					</div>
 			
 					<div class="btn-group" id='type_buttons'>
-					  <button class="btn" id='type_vcf' onClick='select_type(this)'>VCF</button>
-					  <button class="btn" id='type_bed' onClick='select_type(this)'>BED</button>
-					  <button class="btn" id='type_gene' onClick='select_type(this)'>Gene List</button>
+					  <button class="btn" id='type_vcf' onClick='select_type(this); return false;'>VCF</button>
+					  <button class="btn" id='type_bed' onClick='select_type(this); return false;'>BED</button>
+					  <button class="btn" id='type_gene' onClick='select_type(this); return false;'>Gene List</button>
+					  <input type='hidden' name='filetype' id='filetype' value="test" />
 					</div>
 				</div> <!--end div-controls-->
 			</div>
 			<div class="control-group">
 				<label class="control-label" for="inputfile"><b>Short name</b></label>
     			<div class="controls">
-    				<input id ='filter_name' type='text' />
+    				<input id ='filter_name' name='filter_name' type='text' />
     			</div>
 			</div>
 			<div class="control-group">
 				<label class="control-label" for="inputfile"><b>Description</b></label>
     			<div class="controls">
-    				<textarea id ='filter_desc' rows="3"></textarea>
+    				<textarea id ='filter_desc' name='filter_desc' rows="3"></textarea>
     			</div>
 			</div>
 			</form>
@@ -86,7 +87,7 @@ function select_type(btn){
 $('#form-submit').on('click', function(e){
     // We don't want this to act as a link so cancel the link action
     e.preventDefault();
-
+    console.log("submitting")
     // Find form and submit it
     $('#upload_form').submit();
     
