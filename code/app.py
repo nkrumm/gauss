@@ -86,30 +86,25 @@ def variant_details(chrom, start, end=None):
 
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')
-@app.route('/variants/id:<variant_id>')
 @app.route('/samples/<sample_id>/variants')
-def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None, variant_id=None):
+def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
-    if variant_id is not None:
-        data = var_mgr.get_variant(variant_id)
-        for ix, row in enumerate(data["annotations"]["EFF"]):
-            data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
-        return render_template("variant_details.html", data=data)
-    else:
-        if sample_id is not None:
-            title = "%s (All Variants)" % sample_id
-            query_string = "sample_id=%s" % sample_id
+    if sample_id is not None:
+        title = "%s (All Variants)" % sample_id
+        query_string = "sample_id=%s" % sample_id
 
-        elif gene is not None:
-            title = "<em>%s</em> (All Variants)" % gene
-            query_string = "gene=%s" % gene
+    elif gene is not None:
+        title = "<em>%s</em> (All Variants)" % gene
+        query_string = "gene=%s" % gene
 
-        elif chrom is not None:
-            chrom_int = int(chrom.lower().replace("chr",""))
-            title="%s: %s - %s" % (chrom, start, end)
-            query_string = "chrom=%s&start=%s&end=%s" % (chrom, start, end)
+    elif chrom is not None:
+        chrom_int = int(chrom.lower().replace("chr",""))
+        title="%s: %s - %s" % (chrom, start, end)
+        query_string = "chrom=%s&start=%s&end=%s" % (chrom, start, end)
 
-        return render_template("view_variants.html", title=Markup(title), query_string=Markup(query_string))
+    filter_mgr = filter_manager(db="test",conn=g.conn)
+    filters = filter_mgr.get_all_filters()
+    return render_template("view_variants.html", title=Markup(title), query_string=Markup(query_string), filters=filters)
 
 def is_arg(argname):
     return (argname in request.args) and (len(request.args[argname]) > 0)
@@ -143,7 +138,25 @@ def json_variants(return_query=False):
     if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
         query["filter"]["$nin"] = request.args["exclude_filters"].split(";")
     if ("include_filters" in request.args)  and len(request.args["include_filters"]) > 0:
-        query["filter"]["$in"] = request.args["include_filters"].split(";")
+        for f in request.args["include_filters"].strip(";").split(";"):
+            filter_type, filter_id = f.split(":")
+            if filter_type == "set":
+                query["filter"]["$in"].append(filter_id)
+            elif filter_type == "attr":
+                if filter_id == "truncating":
+                    query["annotations.EFF.e"]["$in"]=["FRAME_SHIFT", "STOP_GAINED"]
+                elif filter_id == "autosomal":
+                    query["chrom"]["$nin"]=["X","Y"]
+                elif filter_id == "dbSNP":
+                    query["id"] = None
+                elif filter_id == "genic":
+                    if not is_arg("gene"):  # only do this if not already a gene query
+                        query["annotations.EFF.g"]["$ne"]=None
+                elif filter_id == "exonic":
+                    if not is_arg("gene"):  # only do this if not already a gene query
+                        query["annotations.EFF.g"]["$ne"]=None
+                    query["annotations.EFF.e"]["$nin"] = ["INTRON","UTR-5","UTR-3","INTRAGENIC","UTR_3_PRIME","UTR_5_PRIME"]
+
 
     projection = {"sample_name": True, 
                       "id":True,

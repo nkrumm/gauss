@@ -53,7 +53,7 @@
 	var dtable;
 	$(document).ready(function() {
 		dtable = $('#example').dataTable( {
-			"sDom": "<'row-fluid'<'toolbar span6'><'span3'><'span3'f>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
+			"sDom": "<'row-fluid'<'toolbar'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
 			"oLanguage": {
 				"sLengthMenu": "_MENU_ variants per page"
@@ -106,9 +106,10 @@ function create_set_label(set_item){
 	if (set_item["filter_title"] != undefined){
 		title = set_item.filter_title
 	} else {title = set_item.filter_name}
+	prefix = set_item.prefix
 	color = set_item.color
 	return '<div class="btn-group" id='+id+'>' + 
-		   '<button class="btn btn '+color+' no-hover">'+title+'</button>' + 
+		   '<button class="btn btn '+color+' no-hover"><b>'+prefix + '</b>: '+title+'</button>' + 
 		   '<button class="btn btn '+color+'" onClick=\'remove_filter("'+id+'")\'>x</button></div>'
 };
 
@@ -116,8 +117,7 @@ function build_filter_string(sets){
 	var filter_string = "include_filters="
 		for (var set in sets){
 			if (sets[set].applied){
-				filter_string += sets[set].filter_name
-				filter_string += ";"
+				filter_string += sets[set].type + ":" + sets[set].filter_name + ";";
 			}
 		}
 	return filter_string
@@ -125,20 +125,42 @@ function build_filter_string(sets){
 
 function remove_filter(item){
 	$("#"+item).remove();
-	sets[item].applied = false
-	filter_string = build_filter_string(sets)
-	console.log('/_variants.json?' + query_string + "&" + filter_string)
-	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string);
+	sets[item].applied = false;
+	filter_string = build_filter_string(sets);
+	console.log('/_variants.json?' + query_string + "&" + filter_string);
+	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
+}
+
+function remove_all_filters(){
+	for (var set in sets) {
+		$("#"+sets[set].item).remove();
+		sets[set].applied = false;
+		console.log(sets[set])
+	};
+	filter_string = build_filter_string(sets);
+	console.log('/_variants.json?' + query_string + "&" + filter_string);
+	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);	
 }
 
 function add_filter(item){
 	$('#set_labels').append(create_set_label(sets[item]));
-	sets[item].applied = true
-	filter_string = build_filter_string(sets)
-	console.log('/_variants.json?' + query_string + "&" + filter_string)
-	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string);
+	sets[item].applied = true;
+	sets[item].item = item
+	filter_string = build_filter_string(sets);
+	console.log('/_variants.json?' + query_string + "&" + filter_string);
+	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
 }
 
+function set_up_filter_modal(){
+	for (var set in sets){
+		if (sets[set].applied){
+			$("#modal_" + sets[set].item).addClass(sets[set].color);
+		}
+		else {
+			$("#modal_" + sets[set].item).removeClass(sets[set].color);
+		}
+	}
+}
 /* download the filters from server, populate the sets[] array and set up the typeahead*/
 $(document).ready(function() {
 	$.getJSON('/filters.json', function(data){
@@ -147,7 +169,8 @@ $(document).ready(function() {
 										sets[data[i].filter_name] = data[i]
 									}
 									$('#set_search').typeahead({'source': Object.keys(sets), 
-																'updater': add_filter
+																'updater': add_filter,
+																'minLength': 0,
 															   }
 							);
 	});
@@ -157,15 +180,53 @@ $(document).ready(function() {
 
 {% block content %}
 	<div class="row-fluid">
-	<div class="span2">
+	<div class="span3">
 		<form class="form-inline" action="#">
-	  	<input id="set_search" class="span12" accesskey='s' type="text" placeholder="Type to find sets..." data-provide="typeahead" autocomplete="off" />
+		<div class="input-append">
+	  	<input id="set_search" class='span8' style='height: 40px; font-size: 16px' accesskey='s' type="text" placeholder="Type to filter..." data-provide="typeahead" autocomplete="off" />
+	  	<button data-target="#myModal" role="button" style='height: 40px' class="btn" data-toggle="modal" onClick="set_up_filter_modal()">Browse</button>
+	  	<button class="btn" style='height: 40px' onClick='remove_all_filters();'>Clear</button>
+	  </div>
 	  	</form>
+	  	
 	</div>
-	<div id="set_labels" class="span10">
-	</div>
+	<!--<div id="set_labels" class="span9">
+	</div>-->
 	</div>
 
 	<table class="table table-hover table-condensed" id="example">
 	</table>
+
+
+	<div id="myModal" class="modal hide" style="margin: 120px 0 0 -280px;" tabindex="-1" data-backdrop="0" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  		<div class="modal-header">
+    		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    		<h3 id="myModalLabel">Browse available filters and sets:</h3>
+  		</div>
+  	    <div class="modal-body">
+    		<table class="table table-hover table-condensed" data-provides="rowlink">
+				<thead>
+					<th>Description</th>
+					<th>Click to enable</th>
+				</thead>
+				<tbody>
+				{% for row in filters %}
+					<tr>
+						<td>
+							{{ row["description"] }}
+						</td>
+						<td>
+							<button id="modal_{{row["filter_name"]}}" href="#" class='btn btn-small' onClick='add_filter("{{ row["filter_name"] }}"); $(this).addClass("{{ row["color"] }}");' type="button">{{ row["filter_name"] }}</button>
+						</td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+	    </div>
+	    <div class="modal-footer">
+	    	<button class="btn" data-dismiss="modal" aria-hidden="true" onClick="console.log('cancel'); remove_all_filters()">Cancel</button>
+	    	<button class="btn btn-primary" data-dismiss="modal">Done</button>
+	    </div>
+</div>
+
 {% endblock %}
