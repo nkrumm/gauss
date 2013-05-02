@@ -60,11 +60,29 @@ def samples_info(sample_id):
 def variants():
     return render_template("variants.html")
 
-def variant_details():
+@app.route('/genotypes/id:<genotype_id>')
+def genotype_details(genotype_id):
     var_mgr = variant_manager(db="test",conn=g.conn)
-    data = var_mgr.get_variant(variant_id)
-    return render_template("variant_details.html", data=data)
+    data = var_mgr.get_variant(genotype_id)
+    for ix, row in enumerate(data["annotations"]["EFF"]):
+        data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
+    return render_template("genotype_details.html", data=data)
 
+@app.route('/variants/id:<chrom>:<start>')
+@app.route('/variants/id:<chrom>:<start>-<end>')
+def variant_details(chrom, start, end=None):
+    var_mgr = variant_manager(db="test",conn=g.conn)
+
+    if end is None:
+        genotype_data = var_mgr.get_variants_by_position(chrom, start)
+    else:
+        genotype_data = var_mgr.get_variants_by_position(chrom, start, end)
+    
+    
+    variant_data = var_mgr.get_variant(genotype_data[0]["_id"])
+    for ix, row in enumerate(variant_data["annotations"]["EFF"]):
+        variant_data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
+    return render_template("variant_details.html", variant_data=variant_data, genotype_data=genotype_data)
 
 @app.route('/variants/<gene>')
 @app.route('/variants/<chrom>:<start>-<end>')

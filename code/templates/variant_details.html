@@ -15,11 +15,9 @@ Variant Details
 <h3>Basic Information</h3>
 <dl class="dl-horizontal">
   <dt>Position</dt>
-    <dd>chr{{ data["chrom"] }}:{{data["start"]}}-{{data["end"]}}</dd>
-  <dt>Sample ID</dt>
-    <dd><a href='/samples/id:{{ data["sample_id"] }}'>{{ data["sample_name"] }}</a></dd>
+    <dd>chr{{ variant_data["chrom"] }}:{{variant_data["start"]}}-{{variant_data["end"]}}</dd>
   <dt>Alt / Ref</dt>
-    <dd>{{ data["alt"]}}  / {{ data["ref"] }}</dd>
+    <dd>TODO</dd>
   {% if "id" in data %}
     <dt>dbSNP</dt>
       <dd><a href="http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={{ data["id"]|replace('rs','')}}">{{ data["id"]|default("")}}</a></dd> 
@@ -33,10 +31,10 @@ Variant Details
     <th>Type</th><th>Gene</th><th>AA Change</th><th>Codon Change</th><th>Transcript</th><th>Exon #</th>
   </thead>
   <tbody>
-    {% for row in data["annotations"]["EFF"] %}
+    {% for row in variant_data["annotations"]["EFF"] %}
       <tr>
         <td><span class="label impact-tag {{ row['effect_code'] }}">{{row["e"]}}</span></td>
-        <td>{{row["g"]}}</td>
+        <td><a href="/variants/{{row["g"]}}">{{row["g"]}}</a></td>
         <td>{{row["aa"]}}</td>
         <td>{{row["cc"]}}</td>
         <td>{{row["tx"]}}</td>
@@ -46,17 +44,30 @@ Variant Details
     </tbody>
   </table>
 </div></div>
-<h3>VCF Annotations</h3>
-<dl class="dl-horizontal">
-  {% for row in data["annotations"] %}
-    {% if row != "EFF" %}
-    <dt>{{ row }}</dt>
-      <dd>{{ data["annotations"][row]}}</dd>
-    {% endif %}
-  {% endfor %}
-</dl>
+<h3>Variant Frequency</h3>
 
-<h3>Record</h3>
-{{ data | pprint(verbose=True)}}
+<h3>Found {{genotype_data.count()}} genotypes for this variant</h3>
+<div class="row-fluid">
+  <div class="span8">
+<table class="table">
+  <thead>
+    <th>Sample</th><th>Ref</th><th>Alt</th><th>Filters/Sets</th><th>Data</th><th>Details</th>
+  </thead>
+  <tbody>
+    {% for row in genotype_data %}
+      <tr>
+        <td>{{row["sample_name"]}}</td>
+        <td>{{row["ref"]}}</td>
+        <td>{{row["alt"]}}</td>
+        <td>{{row["data"]}}</td>
+        <td>{{row["filter"]}}</td>
+        <td><a href='/genotypes/id:{{row["_id"]}}'>Details</a></td>
+      <tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+
 
 {% endblock %}
