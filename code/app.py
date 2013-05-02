@@ -268,9 +268,7 @@ def jsonfilters():
     rows = filter_mgr.get_all_filters()
     return jsonify(result=[i for i in rows])
 
-@app.route('/testpage')
-def test():
-    return render_template("test.html")
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
