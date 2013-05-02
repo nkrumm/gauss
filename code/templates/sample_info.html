@@ -3,6 +3,14 @@
 
 {% block header %}
 <script type="text/javascript" src="/static/bootstrap/js/bootstrap-tab.js"></script>
+<link href="/static/custom.css" rel="stylesheet" media="screen">
+<style>
+.dl-horizontal dt 
+{
+    white-space: normal;
+    width: 200px; 
+    margin-right: 8px;
+}</style>
 {% endblock %}
 {% set active_page = "view_samples" %}
 {% block title %}
@@ -24,9 +32,9 @@
 </dl>
 <h3>Variant overview</h3> <a href="/samples/{{ sample_id }}/variants" class="btn" type="button">View Variants</a>
 <dl class="dl-horizontal">
-	{% for type in ["exonic","splicing","intronic","UTR3","UTR5"] %}
-  <dt>{{ type|title()}}</dt>
-  	<dd>{{ macros.type_badge(type, info["variants"][type]|default(0))}}</dd>
+	{% for row in info["variant_summary"] %}
+  <dt>{{ row["effect_str"]}}</dt>
+  	<dd>{{row["count"]}}</dd>
   	{% endfor %}
 </dl>
 

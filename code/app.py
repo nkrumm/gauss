@@ -44,8 +44,16 @@ def samples_info(sample_id):
     mgr = sample_manager(db="test",conn=g.conn)
     var_mgr = variant_manager(db="test",conn=g.conn)
     data = mgr.get_sample(sample_id = sample_id)
-    data["variants"] = var_mgr.get_sample_variant_summary(data["_id"])
-
+    effect_summary = var_mgr.get_sample_variant_summary(data["_id"])
+    for row in effect_summary:
+        eff_code = row["_id"]
+        eff_type = VARIANT_EFFECTS[eff_code]
+        eff_rank = VARIANT_RANKS[eff_type]
+        row["effect_str"] = Markup("<span class='label impact-tag %s'>%s</span>" % (eff_type, VARIANT_SHORTNAMES[eff_code]))
+        row["effect_rank"] = eff_rank
+    print map(operator.itemgetter("effect_rank"), effect_summary)
+    rank_sort = np.argsort(map(operator.itemgetter("effect_rank"), effect_summary))
+    data["variant_summary"] = [effect_summary[i] for i in rank_sort[::-1]]
     return render_template("sample_info.html", sample_id=sample_id, info=data)
 
 @app.route('/variants/')
