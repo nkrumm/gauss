@@ -163,10 +163,11 @@ def json_variants(return_query=False):
         #return jsonify(data)
         data = data["result"]
 
+
     else:
         grouped = False
         data = var_mgr.documents.find(query,projection).sort([("chrom", 1), ("start", 1)])[0:1000]
-
+    
         
     out = {}
     out["aaData"] = []
@@ -194,8 +195,16 @@ def json_variants(return_query=False):
                     effect_str = "<span class='label impact-tag %s'>%s</span>" % (eff_type, VARIANT_SHORTNAMES[eff_code])
         
         row_data.append(gene_str)
-        row_data.append("<a href='/variants/id:%s'>%s</a>" % (row["_id"], effect_str)) 
-        row_data.append("<a href='/variants/id:%s'>id</a>" % row["_id"])
+        if grouped:
+            if row["end"] is not None:
+                pos_str = '%s:%d-%d' % (row["chrom"], row["start"], row["end"])
+            else:
+                pos_str = '%s:%d' % (row["chrom"], row["start"])
+            row_data.append("<a href='/variants/id:%s'>%s</a>" % (pos_str, effect_str))
+            row_data.append("<a href='/variants/id:%s'>id</a>" % (pos_str))
+        else:
+            row_data.append("<a href='/genotypes/id:%s'>%s</a>" % (row["_id"], effect_str))
+            row_data.append("<a href='/genotypes/id:%s'>id</a>" % row["_id"])
         out["aaData"].append(row_data)
     
     

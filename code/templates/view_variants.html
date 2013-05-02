@@ -23,25 +23,30 @@
 
 	function toggle_grouping(grouping){
 		if (grouping == "variant"){
-			dtable.fnReloadAjax('/_variants.json?' + query_string  + filter_string + '&group=variant');
-			console.log('/_variants.json?' + query_string + filter_string +  '&group=variant')
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
+			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
 			grouping_state = "variant"
+			group_string = '&group=variant'
 			$("#genotype_pill").removeClass("active")
 			$("#variant_pill").addClass("active")
+			$($("#example thead tr th")[3]).text("# of Samples")
 		}
 		else{
-			dtable.fnReloadAjax('/_variants.json?' + query_string + filter_string);
-			console.log('/_variants.json?' + query_string + filter_string)
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
+			console.log('/_variants.json?' + query_string + '&'+ filter_string)
 			grouping_state = "genotype"
+			group_string = ''
 			$("#genotype_pill").addClass("active")
 			$("#variant_pill").removeClass("active")			
+			$($("#example thead tr th")[3]).text("Sample")
 		}
 	}
 
 	function build_toolbar(){
-		html_str = '<ul class="nav nav-pills toolbar-pills">';
+		html_str = '<div class="span2"><ul class="nav nav-pills toolbar-pills">';
 		html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
-		html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul>';
+		html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul></div>';
+		html_str += '<div id="set_labels" class="span10"></div>'
 		return html_str
 	}
 	/* Table initialisation */
@@ -95,7 +100,7 @@
 var sets = {}
 var query_string = "{{ query_string }}"
 var filter_string = ""
-
+var group_string = ""
 function create_set_label(set_item){
 	id = set_item.filter_name
 	if (set_item["filter_title"] != undefined){
