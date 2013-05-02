@@ -7,9 +7,23 @@
 {% endblock %}
 
 {% block header %}
+<link href="/static/bootstrap/css/bootstrap-fileupload.min.css" rel="stylesheet" media="screen">
+<script src="/static/bootstrap/js/bootstrap-fileupload.min.js"></script>
+<script>
+function select_type(btn){
+	$("#type_buttons").children().removeClass("active")
+	$("#type_buttons").children().removeClass("btn-info")
+	$(btn).addClass('btn-info active');
+
+}
+
+
+
+</script>
 {% endblock %}
 
 {% block content %}
+
 
 <table class="table table-hover table-condensed" data-provides="rowlink">
 	{{ macros.table_header(columns) }}
@@ -19,7 +33,65 @@
 	{% endfor %}
 	</tbody>
 </table>
+<hr/>
+<button data-target="#addFilterModal" role="button" class="btn btn-success btn-large" data-toggle="modal">Create a new filter/set...</button>
 
+
+
+<div id="addFilterModal" class="modal hide" style="margin: 120px 0 0 -280px;" tabindex="-1" data-backdrop="0" role="dialog" aria-labelledby="addFilterModalLabel" aria-hidden="true">
+  		<div class="modal-header">
+    		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    		<h3 id="addFilterModalLabel">Add a new filter/set:</h3>
+  		</div>
+  	    <div class="modal-body">
+			<form id='upload_form' class="form-horizontal" action='/_upload'>
+			<div class="control-group">
+				<label class="control-label" for="inputfile"><b>File and Type</b></label>
+    			<div class="controls">
+				    <div class="fileupload fileupload-new" data-provides="fileupload">
+					  <div class="input-append">
+					    <div class="uneditable-input span3"><i class="icon-file fileupload-exists"></i> <span class="fileupload-preview"></span></div>
+					    <span class="btn btn-file"><span class="fileupload-new">Select file</span><span class="fileupload-exists">Change</span><input id='file-input' type="file" /></span><a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
+					  </div>
+					</div>
+			
+					<div class="btn-group" id='type_buttons'>
+					  <button class="btn" id='type_vcf' onClick='select_type(this)'>VCF</button>
+					  <button class="btn" id='type_bed' onClick='select_type(this)'>BED</button>
+					  <button class="btn" id='type_gene' onClick='select_type(this)'>Gene List</button>
+					</div>
+				</div> <!--end div-controls-->
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="inputfile"><b>Short name</b></label>
+    			<div class="controls">
+    				<input id ='filter_name' type='text' />
+    			</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="inputfile"><b>Description</b></label>
+    			<div class="controls">
+    				<textarea id ='filter_desc' rows="3"></textarea>
+    			</div>
+			</div>
+			</form>
+	    </div>
+	    <div class="modal-footer">
+	    	<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+	    	<button id='form-submit' class="btn btn-primary" data-dismiss="modal">Done</button>
+	    </div>
+</div>
+
+<script>
+$('#form-submit').on('click', function(e){
+    // We don't want this to act as a link so cancel the link action
+    e.preventDefault();
+
+    // Find form and submit it
+    $('#upload_form').submit();
+    
+  });
+</script>
 {% endblock %}
 
 
@@ -27,7 +99,7 @@
   <tr>
     {% for name in columns %}
 	    {% if name == "filter_name" %}
-	    <td><button class="btn btn-small {{ row["color"]|default("") }} no-hover" href="/filters/{{ row['filter_name'] }}">{{ row['filter_title'] | default(row['filter_name']) }}</button></td>
+	    <td><button class="btn btn-small {{ row["color"]|default("") }} no-hover" href="/filters/{{ row['filter_name'] }}"><b>{{row['prefix']}}</b>: {{ row['filter_title'] | default(row['filter_name']) }}</button></td>
 	    {% else %}
 	    <td>{{ row[name] }}</td>    
 	    {% endif %}
