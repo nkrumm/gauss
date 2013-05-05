@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, Markup, g, request, jsonify, redirect
+from flask import render_template, Markup, g, request, jsonify, redirect, Response
 import operator
 import os
 from collections import defaultdict
@@ -8,6 +8,7 @@ import annotation
 from bson import json_util
 from constants import VARIANT_EFFECTS, VARIANT_RANKS, VARIANT_SHORTNAMES
 import numpy as np
+import redis
 from werkzeug import secure_filename
 
 UPLOAD_FOLDER = '/Volumes/achiever_vol2/UPLOADS/'
@@ -15,6 +16,21 @@ ALLOWED_EXTENSIONS = set(['vcf','variant','txt','bed'])
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+red = redis.StrictRedis()
+
+def event_stream():
+    pubsub = red.pubsub()
+    pubsub.subscribe('chat')
+    # TODO: handle client disconnection.
+    for message in pubsub.listen():
+        print message
+        yield 'data: %s\n\n' % message['data']
+
+@app.route('/stream')
+def stream():
+    return Response(event_stream(),
+                    mimetype="text/event-stream")
 
 @app.before_request
 def before_request():
@@ -324,4 +340,4 @@ def jsonfilters():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=True, threaded=True)
