@@ -10,6 +10,7 @@ class db_conn(object):
     """
     def __init__(self, host=None, user=None, password=None):
         self.conn = self.connect()
+
     def __del__(self):
         self.conn.disconnect()
 
@@ -18,7 +19,6 @@ class db_conn(object):
         Connect to MongoDB or other DB instance(s)
         """
         return MongoClient()
-        
 
 
 class manager_template(object):
@@ -37,7 +37,7 @@ class manager_template(object):
         pass
 
     def insert(self, document):
-        document.save()        
+        document.save()
 
 
 class sample_manager(manager_template):
@@ -70,9 +70,13 @@ class sample_manager(manager_template):
             query["identifier.study_name"] = study_name
         if study_id is not None:
             query["identifier.study_id"] = study_id
-        return self.documents.find(query, {"identifier.sample_id": True,"identifier.study_name": True, "attributes":True , "_id": False})
+        return self.documents.find(query,
+                                   {"identifier.sample_id": True,
+                                    "identifier.study_name": True,
+                                    "attributes": True,
+                                    "_id": False})
 
-    def insert_sample(self, sample_id, study_id, study_name, files = None):
+    def insert_sample(self, sample_id, study_id, study_name, files=None):
         """
         insert a new sample record. SampleID must be unique,
         but study_id can correspond to an existing collection
@@ -86,8 +90,8 @@ class sample_manager(manager_template):
         self.insert(sample)
 
     def add_file_to_sample(self, sample_id, file_dict):
-        self.documents.update({"identifier.sample_id":sample_id}, 
-                              {"$push": {"files":file_dict}})
+        self.documents.update({"identifier.sample_id": sample_id},
+                              {"$push": {"files": file_dict}})
 
 
 class study_manager(manager_template):
@@ -147,7 +151,7 @@ class variant_manager(manager_template):
         'filter' should be a list of tags of valid Filter names
         """
         var = self.new_document()
-        
+
         var.sample_id = sample_id
         var.sample_name = sample_name
         var.chrom = chrom
@@ -162,34 +166,40 @@ class variant_manager(manager_template):
         var.filter = filters
         var.data = data
         var.annotations = {}
-        for name,value in annotations.iteritems():
+        for name, value in annotations.iteritems():
             var.annotations[name] = value
-        
+
         self.insert(var)
 
     def get_variant(self, variant_id):
-        return self.documents.find_one({"_id":ObjectId(variant_id)})
+        return self.documents.find_one({"_id": ObjectId(variant_id)})
 
     def get_variants_by_gene(self, gene):
-        return self.documents.find({"annotations.gene":gene})
+        return self.documents.find({"annotations.gene": gene})
 
     def get_variants_by_position(self, chrom, start, end=None, sort=True):
         if end is None:
-            return self.documents.find({"chrom":str(chrom), "start": int(start)}).sort([("chrom", 1), ("start", 1)])
+            return self.documents.find({"chrom": str(chrom), "start": int(start)})\
+                                 .sort([("chrom", 1), ("start", 1)])
         if sort:
-            return self.documents.find({"chrom":str(chrom), "start": {'$gte': int(start)}, "end": {'$lte': int(end)}}).sort([("chrom", 1), ("start", 1)])
+            return self.documents.find({"chrom": str(chrom),
+                                        "start": {'$gte': int(start)},
+                                        "end": {'$lte': int(end)}})\
+                                 .sort([("chrom", 1), ("start", 1)])
         else:
-            return self.documents.find({"chrom":str(chrom), "start": {'$gte': int(start)}, "end": {'$lte': int(end)}})
+            return self.documents.find({"chrom": str(chrom),
+                                        "start": {'$gte': int(start)},
+                                        "end": {'$lte': int(end)}})
 
     def get_sample_variant_summary(self, sample_id):
         """
         return overview of variant counts for a sample
         """
         #data = self.documents.aggregate([{ "$match" : {"sample_id":ObjectId(sample_id)}} , {"$group" : {"_id": "$annotations.EFF.e",  "count": { "$sum": 1 } } }])
-        data = self.documents.aggregate([{"$match":{"sample_id":ObjectId(sample_id)}},
-                                         {"$unwind":"$annotations.EFF"},
-                                         {"$group":{"_id": "$annotations.EFF.e", "count":{"$sum":1}}}])
-        
+        data = self.documents.aggregate([{"$match": {"sample_id": ObjectId(sample_id)}},
+                                         {"$unwind": "$annotations.EFF"},
+                                         {"$group": {"_id": "$annotations.EFF.e", "count": {"$sum": 1}}}])
+
         return data["result"]
         #out = {}
         #for row in data["result"]:
@@ -198,7 +208,6 @@ class variant_manager(manager_template):
 
     def get_db_stats(self):
         return self.conn[self.db].command("collstats", self.collection)
-
 
 
 class filter_manager(manager_template):
@@ -215,7 +224,7 @@ class filter_manager(manager_template):
             doctype=self.document_type)
 
     def get_all_filters(self):
-        return self.documents.find({},{"_id":0,"date_added":0})
+        return self.documents.find({}, {"_id": 0, "date_added": 0})
 
     def get_filter(self, filter_name):
         return self.documents.find({"filter_name": filter_name})
