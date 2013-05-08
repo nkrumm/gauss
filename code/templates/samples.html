@@ -6,6 +6,10 @@
 All Samples
 {% endblock %}
 
+{%- set tag_labels = {"vcf": "",
+ 					   "bed": "label-info"}
+%}
+
 {% block header %}
 	<link href="/static/datatables/datatables.view_variants_specific.css" rel="stylesheet" media="screen">
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
@@ -46,6 +50,12 @@ All Samples
 	    <td><a href="/samples/{{ row['identifier']['sample_id'] }}">{{ row['identifier']['sample_id'] }}</a></td>
 	    {% elif name =="study_name" %}
 	    <td><a href="/studies/{{ row['identifier']['study_name'] }}">{{ row['identifier']['study_name'] }}</a></td>
+	    {% elif name =="files" %}
+	    <td>
+	    	{% for file in row["files"] %}
+	    		<span class="label {{ tag_labels[file["filetype"]] }}">{{ file["filetype"] }}</span>
+	    	{% endfor %}
+	    </td>
 	    {% else %}
 	    <td>{{ row[name] }}</td>    
 	    {% endif %}

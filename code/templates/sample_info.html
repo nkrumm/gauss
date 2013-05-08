@@ -58,12 +58,13 @@
         <dd>{{ file["filename"]}}</dd>
     <dt>Filetype</dt>
         <dd>{{ file["filetype"]}}</dd>
+    {% if "metadata" in file %}
     <dt>Description</dt>
         <dd>{{ file["metadata"]["description"]|default("None Provided")}}</dd>
-        
+    {% endif %}
     {% if file["filetype"] == "vcf" %}
     <dt>VCF Metadata</dt>
-        <dd><pre>{{ info["files"][0]["metadata"]["vcf_header"]}}</pre></dd>
+        <dd><pre>{{ file["metadata"]["vcf_header"]}}</pre></dd>
     {% endif %}
     </dl>
   </div>
