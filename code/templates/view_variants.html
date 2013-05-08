@@ -22,7 +22,7 @@
 	var grouping_state = "genotype"
 
 	function toggle_grouping(grouping){
-		if (grouping == "variant"){
+		if (variant_grouping_enabled & grouping == "variant"){
 			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
 			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
 			grouping_state = "variant"
@@ -89,7 +89,7 @@
 			 height: 10px;
 			 background-color: gray;
 			 margin: 1px;}
-.GATK_filter {background-color: red;}
+.GATK_filter {background-color: black;}
 .Rare_variants {background-color: blue;}
 .ORoak_denovo_2012 {background-color: orange;}
 
@@ -128,7 +128,7 @@ function remove_filter(item){
 	sets[item].applied = false;
 	filter_string = build_filter_string(sets);
 	console.log('/_variants.json?' + query_string + "&" + filter_string);
-	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
+	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
 }
 
 function remove_all_filters(){
@@ -139,7 +139,7 @@ function remove_all_filters(){
 	};
 	filter_string = build_filter_string(sets);
 	console.log('/_variants.json?' + query_string + "&" + filter_string);
-	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);	
+	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);	
 }
 
 function add_filter(item){
@@ -148,7 +148,7 @@ function add_filter(item){
 	sets[item].item = item
 	filter_string = build_filter_string(sets);
 	console.log('/_variants.json?' + query_string + "&" + filter_string);
-	dtable.fnReloadAjax( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
+	reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
 }
 
 function set_up_filter_modal(){
@@ -161,6 +161,11 @@ function set_up_filter_modal(){
 		}
 	}
 }
+
+function reload_table(url){
+	dtable.fnReloadAjax(url);
+}
+
 /* download the filters from server, populate the sets[] array and set up the typeahead*/
 $(document).ready(function() {
 	$.getJSON('/filters.json', function(data){
@@ -174,6 +179,13 @@ $(document).ready(function() {
 															   }
 							);
 	});
+	if (query_string == ""){
+		$("#variant_pill").addClass("disabled")
+		variant_grouping_enabled = false;
+		console.log("disabling group by variant")
+	} else {
+		variant_grouping_enabled = true;
+	}
 });
 </script>  
 {% endblock %}
