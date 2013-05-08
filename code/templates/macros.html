@@ -36,31 +36,3 @@
 
 	</script>
 {% endmacro %}	
-
-{% macro type_tag(type) %}
- {%- set tag_labels = {"exonic": "label-important",
- 					   "intronic": "",
- 					   "splicing": "label-warning",
- 					   "UTR5": "label-info",
- 					   "UTR3": "label-info",
- 					   "intergenic":""}
- %}
-
-<span class="label {{tag_labels[type]}}">
-	{{ type }}
-</span>
-{% endmacro %}
-
-{% macro type_badge(type, count) %}
- {%- set tag_labels = {"exonic": "badge-important",
- 					   "intronic": "",
- 					   "splicing": "badge-warning",
- 					   "UTR5": "badge-info",
- 					   "UTR3": "badge-info",
- 					   "intergenic":""}
- %}
-
-<span class="badge {{tag_labels[type]}}">
-	{{ count }}
-</span>
-{% endmacro %}
