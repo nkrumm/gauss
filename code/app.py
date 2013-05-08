@@ -305,11 +305,11 @@ def filters():
             filename = secure_filename(file_obj.filename)
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file_obj.save(save_path)
-            
-            filter_mgr.create_filter(filter_name, filter_desc)
-            if filetype=='gene':
+            print filetype
+            if filetype=='type_gene':
                 worker = annotation.GeneAnnotationWorker(save_path, "test", g.conn)
                 worker.start(filter_name)
+                filter_mgr.create_filter(filter_name, filter_desc)
 
         redirect('/filters')
 
