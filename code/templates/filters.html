@@ -14,7 +14,7 @@ function select_type(btn){
 	$("#type_buttons").children().removeClass("active")
 	$("#type_buttons").children().removeClass("btn-info")
 	$(btn).addClass('btn-info active');
-	console.log("selecting")
+	$('#filetype').val($(btn)[0].id)
 }
 
 
@@ -59,7 +59,7 @@ function select_type(btn){
 					  <button class="btn" id='type_vcf' onClick='select_type(this); return false;'>VCF</button>
 					  <button class="btn" id='type_bed' onClick='select_type(this); return false;'>BED</button>
 					  <button class="btn" id='type_gene' onClick='select_type(this); return false;'>Gene List</button>
-					  <input type='hidden' name='filetype' id='filetype' value="test" />
+					  <input type='hidden' name='filetype' id='filetype' value="" />
 					</div>
 				</div> <!--end div-controls-->
 			</div>
