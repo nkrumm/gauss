@@ -24,7 +24,6 @@ def event_stream():
     pubsub.subscribe('chat')
     # TODO: handle client disconnection.
     for message in pubsub.listen():
-        print message
         yield 'data: %s\n\n' % message['data']
 
 @app.route('/stream')
@@ -305,7 +304,15 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-
+@app.route('/annotation/dotest')
+def do_test_annotation():
+    manager = annotation.GaussWorkerManager()
+    worker = annotation.GeneAnnotationWorker2("mygeneworker")
+    manager.register_worker(worker)
+    manager.start_worker(worker,
+                         args=("testfilter",
+                               "/Users/nkrumm/cuttlefish/gauss/Gene_file.test.txt"))
+    return redirect('/filters')
 
 @app.route('/filters', methods=['GET', 'POST'])
 def filters():
