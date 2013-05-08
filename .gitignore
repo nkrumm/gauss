@@ -3,3 +3,5 @@
 .DS_Store
 database_scripts/snpEff_genes.txt
 database_scripts/snpEff_summary.html
+
+Gene_file.test.txt
