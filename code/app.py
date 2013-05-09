@@ -11,8 +11,9 @@ import numpy as np
 import redis
 from werkzeug import secure_filename
 
+
 UPLOAD_FOLDER = '/Volumes/achiever_vol2/UPLOADS/'
-ALLOWED_EXTENSIONS = set(['vcf','variant','txt','bed'])
+ALLOWED_EXTENSIONS = set(['vcf', 'variant', 'txt', 'bed'])
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -59,7 +60,6 @@ def study_info(study_name):
 def samples():
     mgr = sample_manager(db="test",conn=g.conn)
     rows = mgr.get_all_samples()
-    print rows[0]
     return render_template("samples.html", sample_rows=rows, columns=["sample_id","study_name", "files","attributes"])
 
 
@@ -75,7 +75,6 @@ def samples_info(sample_id):
         eff_rank = VARIANT_RANKS[eff_type]
         row["effect_str"] = Markup("<span class='label impact-tag %s'>%s</span>" % (eff_type, VARIANT_SHORTNAMES[eff_code]))
         row["effect_rank"] = eff_rank
-    print map(operator.itemgetter("effect_rank"), effect_summary)
     rank_sort = np.argsort(map(operator.itemgetter("effect_rank"), effect_summary))
     data["variant_summary"] = [effect_summary[i] for i in rank_sort[::-1]]
     return render_template("sample_info.html", sample_id=sample_id, info=data)
@@ -328,13 +327,11 @@ def filters():
             filename = secure_filename(file_obj.filename)
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file_obj.save(save_path)
-            print filetype
             if filetype=='type_gene':
                 worker = annotation.GeneAnnotationWorker(save_path, "test", g.conn)
                 worker.start(filter_name)
                 filter_mgr.create_filter(filter_name, filter_desc)
 
-        redirect('/filters')
 
     rows = filter_mgr.get_all_filters()
     return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added","color"])
