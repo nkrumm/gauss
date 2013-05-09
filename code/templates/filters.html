@@ -16,10 +16,18 @@ function select_type(btn){
 	$(btn).addClass('btn-info active');
 	$('#filetype').val($(btn)[0].id)
 }
+function do_filter(e){
+	//preventDefault(); // preventing default click action
+    $.ajax({
+        url: '/annotation/dotest',
+        success: function(){
+            console.log("success")
+        }, error: function(){
+            alert('ajax failed');
+        },
+    })
+}
 
-
-
-</script>
 {% endblock %}
 
 {% block content %}
@@ -36,7 +44,7 @@ function select_type(btn){
 <hr/>
 <button data-target="#addFilterModal" role="button" class="btn btn-success btn-large" data-toggle="modal">Create a new filter/set...</button>
 
-<a href="/annotation/dotest" class="btn">Run test filter</a>
+<a href="#" onClick="do_filter(this)" class="btn">Run test filter</a>
 
 <div id="addFilterModal" class="modal hide" style="margin: 120px 0 0 -280px;" tabindex="-1" data-backdrop="0" role="dialog" aria-labelledby="addFilterModalLabel" aria-hidden="true">
   		<div class="modal-header">
