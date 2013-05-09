@@ -38,12 +38,13 @@ class GaussWorker(object):
 
 
 class TestWorker(GaussWorker):
-    def __init__(self, name):
+    def __init__(self, name=None):
         GaussWorker.__init__(self, name)
 
     def work(self, num):
         for i in xrange(num):
             self.update(i)
+            print i
             time.sleep(1)
 
 
