@@ -38,6 +38,10 @@
                   sse()
                   });
 
+    $(window).on('unload', function(){
+              source.close();
+
+    });
     </script>
     {% block header %}{% endblock %}
   </head>
