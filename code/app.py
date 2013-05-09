@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, Markup, g, request, jsonify, redirect, Response
+from flask import render_template, Markup, g, request, jsonify, redirect, Response, flash, url_for
 import operator
 import os
 from collections import defaultdict
@@ -17,6 +17,7 @@ ALLOWED_EXTENSIONS = set(['vcf', 'variant', 'txt', 'bed'])
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = 'some_secret'
 
 def event_stream(pubsub):
     # TODO: handle client disconnection.
@@ -310,7 +311,8 @@ def do_test_annotation(n=10):
     worker = annotation.TestWorker()
     manager.register_worker(worker)
     manager.start_worker(worker, args=[int(n)])
-    return jsonify(result="1")#redirect('/filters')
+    flash("Ran a total of %d tests" % n, "success")
+    return redirect(url_for("filters"))
 
 @app.route('/annotation/doGeneAnnotationWorker',methods=['GET', 'POST'])
 def do_GeneAnnotationWorker():
@@ -330,9 +332,11 @@ def do_GeneAnnotationWorker():
                 worker = annotation.GeneAnnotationWorker2("mygeneworker")
                 manager.register_worker(worker)
                 manager.start_worker(worker, args=(filter_name,save_path))
-                return jsonify(result="OK")
-    else:
-        return jsonify(result="FAIL")
+                flash("Job successfully queued", "success")
+                return redirect(url_for("filters"))
+    
+    flash("Error in queueing job!", "error")
+    return redirect("/filters")        
 
 
 
