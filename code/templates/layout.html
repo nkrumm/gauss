@@ -20,6 +20,16 @@
         padding: 9px 0;
       }
       .no-hover:hover { background-position: 0px !important; }
+      .fade {
+  opacity: 0;
+  -webkit-transition: opacity 0.15s linear;
+  -moz-transition: opacity 0.15s linear;
+  -o-transition: opacity 0.15s linear;
+  transition: opacity 0.15s linear;
+}
+.fade.in {
+  opacity: 1;
+}
     </style>
     <!--<script>
     var source
@@ -43,6 +53,7 @@
 
     });
     </script>-->
+
     {% block header %}{% endblock %}
   </head>
   <body>
@@ -108,9 +119,26 @@
         </div>
         <div class="span10">
         <!--Body content-->
+         {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class='row'><div class='span7 offset2'>
+            {% for category, message in messages %}
+            <div id='alerts' class="alert alert-block alert-{{- category }} fade">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              <h4>{{ category | capitalize }}!</h4>
+              {{ message }}
+            </div></div>
+            <script>
+            $(".alert").addClass("in")
+            </script>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+        <div class='row'>
         <h2>{% block title %}{% endblock %}</h2>
         {% block content %}{% endblock %}
-
+         </div>
         </div>
       </div>
     </div>
