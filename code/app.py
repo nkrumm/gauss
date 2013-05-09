@@ -304,19 +304,16 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 @app.route('/annotation/dotest')
-def do_test_annotation():
+@app.route('/annotation/dotest/<n>')
+def do_test_annotation(n=10):
     manager = annotation.GaussWorkerManager()
-    worker = annotation.GeneAnnotationWorker2("mygeneworker")
+    worker = annotation.TestWorker()
     manager.register_worker(worker)
-    manager.start_worker(worker,
-                         args=("testfilter",
-                               "/Users/nkrumm/cuttlefish/gauss/Gene_file.test.txt"))
-    return redirect('/filters')
+    manager.start_worker(worker, args=[int(n)])
+    return jsonify(result="1")#redirect('/filters')
 
-@app.route('/filters', methods=['GET', 'POST'])
-def filters():
-    filter_mgr = filter_manager(db="test",conn=g.conn)
-
+@app.route('/annotation/doGeneAnnotationWorker',methods=['GET', 'POST'])
+def do_GeneAnnotationWorker():
     if request.method == 'POST':
         file_obj = request.files['file']
         filetype = request.form["filetype"]
@@ -327,11 +324,21 @@ def filters():
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file_obj.save(save_path)
             if filetype=='type_gene':
-                worker = annotation.GeneAnnotationWorker(save_path, "test", g.conn)
-                worker.start(filter_name)
+                filter_mgr = filter_manager(db="test",conn=g.conn)
                 filter_mgr.create_filter(filter_name, filter_desc)
+                manager = annotation.GaussWorkerManager()
+                worker = annotation.GeneAnnotationWorker2("mygeneworker")
+                manager.register_worker(worker)
+                manager.start_worker(worker, args=(filter_name,save_path))
+                return jsonify(result="OK")
+    else:
+        return jsonify(result="FAIL")
 
 
+
+@app.route('/filters')
+def filters():
+    filter_mgr = filter_manager(db="test",conn=g.conn)
     rows = filter_mgr.get_all_filters()
     return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added","color"])
 
