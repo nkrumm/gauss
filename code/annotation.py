@@ -27,10 +27,13 @@ class GaussWorker(object):
             self.progress_counter += 1
             self.notify_q.publish('chat', u'progress %s: %d' % (self.name, self.progress_counter))
 
-    def start(self, args):
+    def start(self, args=None):
         self.notify_q = redis.Redis()
         self.notify_q.publish('chat', u'starting %s' % self.name)
-        self.work(*args)
+        if args is not None:
+            self.work(*args)
+        else:
+            self.work()
         self.notify_q.publish('chat', u'finished %s' % self.name)
 
 
@@ -76,9 +79,12 @@ class GaussWorkerManager(object):
     def get_registered_workers(self):
         return self.registered_workers
 
-    def start_worker(self, worker, args):
+    def start_worker(self, worker, args=None):
         if worker in self.registered_workers:
-            self.work_q.enqueue(worker.start, args)
+            if args is not None:
+                self.work_q.enqueue(worker.start, args)
+            else:
+                self.work_q.enqueue(worker.start)
         else:
             raise GaussWorkerException("Must register worker first!")
 
