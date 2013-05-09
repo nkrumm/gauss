@@ -18,22 +18,21 @@ ALLOWED_EXTENSIONS = set(['vcf', 'variant', 'txt', 'bed'])
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-red = redis.StrictRedis()
-
-def event_stream():
-    pubsub = red.pubsub()
-    pubsub.subscribe('chat')
+def event_stream(pubsub):
     # TODO: handle client disconnection.
     for message in pubsub.listen():
         yield 'data: %s\n\n' % message['data']
 
 @app.route('/stream')
 def stream():
-    return Response(event_stream(),
+    return Response(event_stream(g.pubsub),
                     mimetype="text/event-stream")
 
 @app.before_request
 def before_request():
+    g.red = redis.StrictRedis()
+    g.pubsub = g.red.pubsub()
+    g.pubsub.subscribe('chat')
     g.conn = db_conn().connect()
 
 @app.teardown_request
