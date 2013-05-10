@@ -238,3 +238,8 @@ class filter_manager(manager_template):
         filter_doc.type = filter_type
         filter_doc.color = color
         self.insert(filter_doc)
+
+    def delete_filter(self, filter_name):
+        self.documents.remove({"filter_name":filter_name})
+
+

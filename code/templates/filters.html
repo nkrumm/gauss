@@ -22,8 +22,8 @@ function select_type(btn){
 {% block content %}
 
 
-<table class="table table-hover table-condensed" data-provides="rowlink">
-	{{ macros.table_header(columns) }}
+<table class="table table-hover table-condensed">
+	{{ macros.table_header(columns+["Admin"]) }}
 	<tbody>
 	{% for row in rows %}
 		{{ make_row_link(row) }}
@@ -99,8 +99,14 @@ $('#form-submit').on('click', function(e){
 	    {% if name == "filter_name" %}
 	    <td><button class="btn btn-small {{ row["color"]|default("") }} no-hover" href="/filters/{{ row['filter_name'] }}"><b>{{row['prefix']}}</b>: {{ row['filter_title'] | default(row['filter_name']) }}</button></td>
 	    {% else %}
-	    <td>{{ row[name] }}</td>    
+	    <td>{{ row[name] }}</td>
 	    {% endif %}
     {% endfor %}
+    {% if row["type"] == "set" %}
+    <td><a class='btn btn-small' href="/filters/delete/{{row['filter_name']}}"><b><i class="icon-trash"></i> Delete</b></a></td>
+    {%else%}
+    <td></td>
+    {% endif %}
+
   </tr>
 {% endmacro %}

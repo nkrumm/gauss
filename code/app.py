@@ -339,12 +339,22 @@ def do_GeneAnnotationWorker():
     return redirect("/filters")        
 
 
-
 @app.route('/filters')
 def filters():
     filter_mgr = filter_manager(db="test",conn=g.conn)
     rows = filter_mgr.get_all_filters()
     return render_template("filters.html", rows=rows, columns=["filter_name","description", "type", "date_added","color"])
+
+@app.route('/filters/delete/<name>')
+def delete_filter(name):
+    filter_mgr = filter_manager(db="test",conn=g.conn)
+    filter_mgr.delete_filter(name)
+    # manager = annotation.GaussWorkerManager()
+    # worker = annotation.GeneAnnotationWorker2("mygeneworker")
+    # manager.register_worker(worker)
+    # manager.start_worker(worker, args=[filter_name]))
+    flash("Filter successfully deleted","success")
+    return redirect(url_for("filters"))
 
 @app.route('/filters.json')
 def jsonfilters():
