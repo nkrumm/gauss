@@ -307,9 +307,10 @@ def allowed_file(filename):
 @app.route('/annotation/dotest')
 @app.route('/annotation/dotest/<n>')
 def do_test_annotation(n=10):
-    manager = annotation.GaussWorkerManager()
+    manager = annotation.GaussWorkerManager(db="test",conn=g.conn)
     worker = annotation.TestWorker()
-    manager.register_worker(worker)
+    print "OK"
+    #manager.register_worker(worker)
     manager.start_worker(worker, args=[int(n)])
     flash("Ran a total of %d tests" % n, "success")
     return redirect(url_for("filters"))
@@ -328,9 +329,9 @@ def do_GeneAnnotationWorker():
             if filetype=='type_gene':
                 filter_mgr = filter_manager(db="test",conn=g.conn)
                 filter_mgr.create_filter(filter_name, filter_desc)
-                manager = annotation.GaussWorkerManager()
+                manager = annotation.GaussWorkerManager(db="test",conn=g.conn)
                 worker = annotation.GeneAnnotationWorker2("mygeneworker")
-                manager.register_worker(worker)
+                #manager.register_worker(worker)
                 manager.start_worker(worker, args=(filter_name,save_path))
                 flash("Job successfully queued", "success")
                 return redirect(url_for("filters"))
@@ -349,7 +350,7 @@ def filters():
 def delete_filter(name):
     filter_mgr = filter_manager(db="test",conn=g.conn)
     filter_mgr.delete_filter(name)
-    # manager = annotation.GaussWorkerManager()
+    # manager = annotation.GaussWorkerManager(db="test",conn=g.conn)
     # worker = annotation.GeneAnnotationWorker2("mygeneworker")
     # manager.register_worker(worker)
     # manager.start_worker(worker, args=[filter_name]))
@@ -362,7 +363,12 @@ def jsonfilters():
     rows = filter_mgr.get_all_filters()
     return jsonify(result=[i for i in rows])
 
+@app.route('/jobs')
+def jobs():
+    job_mgr = annotation.GaussWorkerManager(db="test",conn=g.conn)
+    rows = job_mgr.get_all_jobs()
 
+    return render_template("jobs.html", rows=rows, columns=["job_name","status", "type", "date_registered"])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

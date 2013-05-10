@@ -150,3 +150,28 @@ class Filter(Document):
     default_values = {"date_added": datetime.datetime.utcnow}
 
     pass
+
+class Job(Document):
+    """
+    Document type for a running or past Job
+    Managed by GaussWorkerManager
+    """
+
+    use_dot_notation = True
+    dot_notation_warning = True
+
+    structure = {
+        "job_name": basestring,
+        "job_id": basestring,
+        "description": basestring,
+        "type": basestring,
+        "date_registered": datetime.datetime,
+        "date_finished": datetime.datetime,
+        "status": basestring
+    }
+
+    required_fields = ['job_name','status']
+
+    default_values = {"date_registered": datetime.datetime.utcnow}
+
+    pass
