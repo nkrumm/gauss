@@ -37,7 +37,8 @@ class manager_template(object):
         pass
 
     def insert(self, document):
-        document.save()
+        return self.documents.insert(document)
+
 
 
 class sample_manager(manager_template):
