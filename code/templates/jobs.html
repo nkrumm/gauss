@@ -1,6 +1,14 @@
 {% import 'macros.html' as macros %}
 {% extends "layout.html" %}
 
+{% block header %}
+<style>
+.nav-tabs li {font-size: 15px}
+.nav-tabs .active {font-weight: bold}
+.nav-tabs .badge {font-weight: normal !important}
+</style>
+{% endblock %}
+
 {% set active_page = "view_jobs" %}
 {% block title %}
 	Jobs
@@ -8,14 +16,58 @@
 
 {% block content %}
 
-<table class="table table-hover table-condensed" data-provides="rowlink">
-	{{ macros.table_header(columns) }}
-	<tbody>
-	{% for row in rows %}
-		{{ make_row_link(row) }}
-	{% endfor %}
-	</tbody>
-</table>
+<div class="tabbable"> <!-- Only required for left/right tabs -->
+  <ul class="nav nav-tabs">
+  
+    <li><a href="#tab_queued" data-toggle="tab">Queued {% if rows["queued"].count() > 0 -%}<span class='badge'>{{ rows["queued"].count() }}{% endif %}</span></a></li>
+    <li class="active"><a href="#tab_running" data-toggle="tab">Running {% if rows["running"].count() > 0 -%}<span class='badge badge-success'>{{ rows["running"].count() }}{% endif %}</span></a></li>
+    <li><a href="#tab_completed" data-toggle="tab">Completed</a></li>
+    <li><a href="#tab_failed" data-toggle="tab">Failed {% if rows["failed"].count() > 0 -%}<span class='badge'>{{ rows["failed"].count() }}{% endif %}</span></a></li>
+  </ul>
+  <div class="tab-content">
+    <div class="tab-pane" id="tab_queued">
+		<table class="table table-hover table-condensed" data-provides="rowlink">
+			{{ macros.table_header(columns) }}
+			<tbody>
+			{% for row in rows["queued"] %}
+				{{ make_row_link(row) }}
+			{% endfor %}
+			</tbody>
+		</table>
+    </div>
+    <div class="tab-pane active" id="tab_running">
+		<table class="table table-hover table-condensed" data-provides="rowlink">
+			{{ macros.table_header(columns) }}
+			<tbody>
+			{% for row in rows["running"] %}
+				{{ make_row_link(row) }}
+			{% endfor %}
+			</tbody>
+		</table>
+    </div>
+    <div class="tab-pane" id="tab_completed">
+      <table class="table table-hover table-condensed" data-provides="rowlink">
+			{{ macros.table_header(columns) }}
+			<tbody>
+			{% for row in rows["completed"] %}
+				{{ make_row_link(row) }}
+			{% endfor %}
+			</tbody>
+		</table>
+    </div>
+    <div class="tab-pane" id="tab_failed">
+      <table class="table table-hover table-condensed" data-provides="rowlink">
+			{{ macros.table_header(columns) }}
+			<tbody>
+			{% for row in rows["failed"] %}
+				{{ make_row_link(row) }}
+			{% endfor %}
+			</tbody>
+		</table>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}
 

@@ -309,7 +309,6 @@ def allowed_file(filename):
 def do_test_annotation(n=10):
     manager = annotation.GaussWorkerManager(db="test",conn=g.conn)
     worker = annotation.TestWorker()
-    print "OK"
     #manager.register_worker(worker)
     manager.start_worker(worker, args=[int(n)])
     flash("Ran a total of %d tests" % n, "success")
@@ -366,8 +365,11 @@ def jsonfilters():
 @app.route('/jobs')
 def jobs():
     job_mgr = annotation.GaussWorkerManager(db="test",conn=g.conn)
-    rows = job_mgr.get_all_jobs()
-
+    rows = {}
+    rows["queued"] = job_mgr.get_jobs(status="queued")
+    rows["running"] = job_mgr.get_jobs(status="running")
+    rows["completed"] = job_mgr.get_jobs(status="completed", limit=10)
+    rows["failed"] =  job_mgr.get_jobs(status="failed", limit=10)
     return render_template("jobs.html", rows=rows, columns=["job_name","status", "type", "date_registered"])
 
 if __name__ == '__main__':

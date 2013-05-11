@@ -12,6 +12,7 @@ class GaussWorkerException(Exception):
 class NotImplementedException(Exception):
     pass
 
+STATUS_CODES = ["queued", "running", "completed", "failed"]
 
 class GaussWorker(object):
     def __init__(self, name=None):
@@ -21,26 +22,26 @@ class GaussWorker(object):
             self.name = "randomstring"
         self.progress_counter = 0
         self.mongodb_id = None
-    
+
     def update_status(self, status=None):
-        if status is not None:
+        if status in STATUS_CODES:
             self.conn["test"].jobs.update({"_id": self.mongodb_id},  {"$set": {"status": status}})
             self.notify_q.publish('chat', u'update %s' % status)
             print "setting status to ", status
         else:
-            pass
+            raise GaussWorkerException("Only the following status codes are allowed! %s" % (", ".join(STATUS_CODES)))
 
     def start(self, args=None):
         self.conn = MongoClient()
         self.notify_q = redis.Redis()
-        self.update_status("Started")
+        self.update_status("running")
         print args
         if args is not None:
             self.work(*args)
         else:
             self.work()
-        self.update_status("Completed")
-        
+        self.update_status("completed")
+
 
 class TestWorker(GaussWorker):
     def __init__(self, name=None):
@@ -49,8 +50,9 @@ class TestWorker(GaussWorker):
     def work(self, num):
         for i in xrange(num):
             print i
-            self.update_status("Progress %d/%d" % (i,num))
+            #self.update_status("Progress %d/%d" % (i,num))
             time.sleep(1)
+
 
 class GeneAnnotationWorker2(GaussWorker):
     def __init__(self, name=None):
@@ -100,7 +102,7 @@ class GaussWorkerManager(manager_template):
     def start_worker(self, worker, args=None):
         job_doc = self.new_document()
         job_doc.job_name = worker.name
-        job_doc.status = "created"
+        job_doc.status = "queued"
         _id = self.insert(job_doc)
         print "_id", _id
         worker.mongodb_id = _id
@@ -119,6 +121,12 @@ class GaussWorkerManager(manager_template):
 
     def get_all_jobs(self):
         return self.documents.find().sort("date_registered", -1)
+
+    def get_jobs(self, status, limit=None):
+        if limit is None:
+            return self.documents.find({"status": status}).sort("date_registered", -1)
+        else:
+            return self.documents.find({"status": status}).sort("date_registered", -1).skip(0).limit(limit)
 
 
 
