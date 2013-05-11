@@ -103,10 +103,23 @@ $('#form-submit').on('click', function(e){
 	    {% endif %}
     {% endfor %}
     {% if row["type"] == "set" %}
-    <td><a class='btn btn-small' href="/filters/delete/{{row['filter_name']}}"><b><i class="icon-trash"></i> Delete</b></a></td>
-    {%else%}
+    <td><div class="btn-group">
+		  <a class="btn dropdown-toggle btn-small" data-toggle="dropdown" href="#">
+		    <b>Action</b>
+		    <span class="caret"></span>
+		  </a>
+		  <ul class="dropdown-menu">
+		  	<li><a href="/filters/edit/{{row['filter_name']}}"><i class="icon-search"></i> Details</a></li>
+		    <li><a href="/filters/edit/{{row['filter_name']}}"><i class="icon-edit"></i> Modify</a></li>
+		    <li><a href="/filters/delete/{{row['filter_name']}}"><i class="icon-trash"></i> Delete</a></li>
+
+		  </ul>
+		</div>
+	</td>
+    {% else %}
     <td></td>
     {% endif %}
 
   </tr>
 {% endmacro %}
+
