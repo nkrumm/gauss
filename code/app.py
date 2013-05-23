@@ -168,6 +168,28 @@ def json_variants(return_query=False):
     else:
         limit = 1000
 
+    default_column_list = ["chrom","start","end","sample_name","id","ref","alt"]
+    projection = {"sample_name": True, 
+                  "id":True,
+                  "ref": True,
+                  "alt": True,
+                  "chrom":True,
+                  "start":True,
+                  "filter": True,
+                  "annotations.EFF":True}
+    
+    custom_column_list = []
+    if is_arg("columns"):
+        for c in request.args["columns"].rstrip(";").split(";"):
+            c = c.split(".")
+            if len(c) == 1:
+                custom_column_list.append(c)
+                projection[c[0]] = True
+            elif (c[0] == "annotations") and (c[1] == "EFF"):
+                custom_column_list.append(c)
+            else:
+                pass
+
     # FILTERS
     if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
         query["filter"]["$nin"] = request.args["exclude_filters"].split(";")
@@ -196,14 +218,7 @@ def json_variants(return_query=False):
                     query["filter"]["$nin"].append(filter_id)
 
 
-    projection = {"sample_name": True, 
-                      "id":True,
-                      "ref": True,
-                      "alt": True,
-                      "chrom":True,
-                      "start":True,
-                      "filter": True,
-                      "annotations.EFF":True}
+    
     if is_arg("group") and (request.args["group"] == "variant"):
         grouped = True
         data = var_mgr.documents.aggregate([{"$match": query},
@@ -249,18 +264,17 @@ def json_variants(return_query=False):
             data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit)
         else:
             data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit).sort([("chrom", 1), ("start", 1)])
-    
-        
+
     out = {}
     out["aaData"] = []
-    column_list = ["chrom","start","end","sample_name","id","ref","alt"]
+
     for row in data:
         if grouped:
             row["annotations"] = {"EFF":row["annotations"][0]}
             row["filter"] = row["filter"][0]
             row["sample_name"] = int(row["count"]) #", ".join(row["sample_name"])
 
-        row_data = [row.get(c,'') for c in column_list]
+        row_data = [row.get(c,'') for c in default_column_list]
         row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
         highest_rank = 0
         effect_str = ""
@@ -287,6 +301,16 @@ def json_variants(return_query=False):
         else:
             row_data.append("<a href='/genotypes/id:%s'>%s</a>" % (row["_id"], effect_str))
             row_data.append("<a href='/genotypes/id:%s'>id</a>" % row["_id"])
+        
+        if len(custom_column_list) > 0:
+            for c in custom_column_list:
+                if len(c) == 1:
+                    row_data.append(row.get(c[0],''))
+                else:
+                    val =row[c[0]][c[1]][0].get(c[2],'')
+                    row_data.append(val)
+                    print val
+
         out["aaData"].append(row_data)
     
     
