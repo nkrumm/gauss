@@ -28,29 +28,6 @@
 	}
 	</style>
 	<script>
-	var grouping_state = "genotype"
-
-	function toggle_grouping(grouping){
-		if (variant_grouping_enabled & grouping == "variant"){
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
-			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
-			grouping_state = "variant"
-			group_string = '&group=variant'
-			$("#genotype_pill").removeClass("active")
-			$("#variant_pill").addClass("active")
-			$($("#example thead tr th")[3]).text("# of Samples")
-		}
-		else{
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
-			console.log('/_variants.json?' + query_string + '&'+ filter_string)
-			grouping_state = "genotype"
-			group_string = ''
-			$("#genotype_pill").addClass("active")
-			$("#variant_pill").removeClass("active")			
-			$($("#example thead tr th")[3]).text("Sample")
-		}
-	}
-
 	function build_toolbar(){
 		html_str = '<div class="span2"><ul class="nav nav-pills toolbar-pills">';
 		html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
@@ -62,34 +39,20 @@
 	function build_column_selector(index, element){
 		// create <li> elements for all the columns
 		col_name = element["sName"]
-		col_title = element["sName"]
+		col_title = element["sTitle"]
 		if (element["bVisible"]){
-			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\")'><span class='select-menu-item'><i class='icon-ok'></i></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'><span class='select-menu-item'><i class='icon-ok'></i></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
 		} else {
-			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\")'><span class='select-menu-item'></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'><span class='select-menu-item'></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
 		}
-
 	}
 
-	/* Table initialisation */
-	var dtable;
-	var dtable_columns=[{"sTitle":"Chrom", "sWidth":"5%","sName":"chrom"},
-						{"sTitle":"Start", "sWidth":"7.5%","sName":"start"},
-						{"sTitle":"Stop", "sWidth":"7.5%","sName":"stop"},
-						{"sTitle":"Sample","bSearchable": true, "sWidth":"10%","sType": "numeric","sName":"sample"},
-						{"sTitle":"dbSNP","bSearchable": true, "sWidth":"10%","sName":"dbsnp"},
-						{"sTitle":"Ref","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"ref"},
-						{"sTitle":"Alt","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"alt"},
-						{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%","sName":"filters"},
-						{"sTitle":"Gene","bSearchable": true, "sWidth":"10%","sName":"gene"},
-						{"sTitle":"Effect <a href='#'>highest</a> | <a href='#'>all</a>","bSearchable": true, "sWidth":"15%","sName":"effect"},
-						{"sTitle":"id","bSearchable": false,"sName":"id"}];
-	
-	var additional_columns=[{"sTitle": "GERP", "sName": "gerp"},
-						   {"sTitle": "AA Change", "sName": "aa_change"}]
-
-	$(document).ready(function() {
-
+	function build_dtable(url){
+		loaded_cols = dtable_columns.filter(function (el) {
+			if (el["isLoaded"]==true){
+				return el
+			}
+		})
 		dtable = $('#example').dataTable( {
 			"sDom": "<'row-fluid'<'toolbar'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
@@ -99,18 +62,40 @@
 			"bDeferRender": true,
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
 			"bStateSave": true,
-			"aoColumns": dtable_columns,
+			"aoColumns": loaded_cols,
 			"bProcessing": true,
         	"bServerSide": false,
-        	"sAjaxSource": "/_variants.json?" + query_string
+        	"sAjaxSource": url
 		} );
-		console.log("/_variants.json?" + query_string)	
-		$("div.toolbar").html(build_toolbar());
-
-		//record columns-- todo: this will just set a "visible" flag in the columns array
+		// build the column_selector dropdown box based on all columns
+		$("#column_selector").empty()
 		$(dtable_columns).each(build_column_selector);
-		$(additional_columns).each(build_column_selector);
+		$("div.toolbar").html(build_toolbar());
+	}
+	/* Table initialisation */
+	var dtable;
+	var dtable_columns=[{"sTitle":"Chrom", "sWidth":"5%","sName":"chrom", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Start", "sWidth":"7.5%","sName":"start", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Stop", "sWidth":"7.5%","sName":"stop", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Sample","bSearchable": true, "sWidth":"10%","sType": "numeric","sName":"sample", "isLoaded": true, "bVisible": true},
+						{"sTitle":"dbSNP","bSearchable": true, "sWidth":"10%","sName":"dbsnp", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Ref","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"ref", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Alt","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"alt", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%","sName":"filters", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Gene","bSearchable": true, "sWidth":"10%","sName":"gene", "isLoaded": true, "bVisible": true},
+						{"sTitle":"Effect","bSearchable": true, "sWidth":"15%","sName":"effect", "isLoaded": true, "bVisible": true},
+						{"sTitle":"id","bSearchable": false,"sName":"id", "isLoaded": true, "bVisible": true},
+						{"sTitle": "VCF:data", "sName": "data", "isLoaded": false, "isDefault": false},
+					    {"sTitle": "VCF:qual", "sName": "qual", "isLoaded": false, "isDefault": false},
+					    {"sTitle": "AA Change", "sName": "annotations.EFF.aa", "isLoaded": false, "isDefault": false},
+					    {"sTitle": "Transcript", "sName": "annotations.EFF.tx", "isLoaded": false, "isDefault": false},
+					    {"sTitle": "Exon", "sName": "annotations.EFF.r", "isLoaded": false, "isDefault": false},
+					    ];
 
+	$(document).ready(function() {
+		build_dtable("/_variants.json?" + query_string);
+		console.log("/_variants.json?" + query_string);
+		
 	} );
 </script>
 
@@ -127,13 +112,33 @@
 </style>
 
 <script>
-
 var sets = {}
 var query_string = "{{ query_string }}"
 var filter_string = ""
 var group_string = ""
 var column_string = ""
+var grouping_state = "genotype"
 
+function toggle_grouping(grouping){
+	if (variant_grouping_enabled & grouping == "variant"){
+		dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
+		console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
+		grouping_state = "variant"
+		group_string = '&group=variant'
+		$("#genotype_pill").removeClass("active")
+		$("#variant_pill").addClass("active")
+		$($("#example thead tr th")[3]).text("# of Samples")
+	}
+	else{
+		dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
+		console.log('/_variants.json?' + query_string + '&'+ filter_string)
+		grouping_state = "genotype"
+		group_string = ''
+		$("#genotype_pill").addClass("active")
+		$("#variant_pill").removeClass("active")			
+		$($("#example thead tr th")[3]).text("Sample")
+	}
+}
 
 function create_set_label(set_item){
 	id = set_item.filter_name
@@ -161,7 +166,7 @@ function remove_filter(item){
 	$("#"+item).remove();
 	sets[item].applied = false;
 	filter_string = build_filter_string(sets);
-	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
+	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);
 }
 
 function remove_all_filters(){
@@ -171,7 +176,7 @@ function remove_all_filters(){
 		console.log(sets[set])
 	};
 	filter_string = build_filter_string(sets);
-	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);	
+	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);	
 }
 
 function add_filter(item){
@@ -179,7 +184,7 @@ function add_filter(item){
 	sets[item].applied = true;
 	sets[item].item = item
 	filter_string = build_filter_string(sets);
-	reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
+	reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string);
 }
 
 function set_up_filter_modal(){
@@ -193,24 +198,48 @@ function set_up_filter_modal(){
 	}
 }
 
-function reload_table(url){
+function reload_table(url, rebuild){
 	console.log(url)
-	dtable.fnReloadAjax(url);
-	// update columns as nececassry 
+	rebuild = typeof rebuild !== 'undefined' ? rebuild : false;
+	if (rebuild) {
+		dtable.fnDestroy();
+		$('#example').empty();
+		build_dtable(url);
+	} else {
+		dtable.fnReloadAjax(url);
+	}
 }
 
-function toggle_column(item,column_name){
-	if ($(item).children()[0].innerHTML != ""){
-		$(item).children()[0].innerHTML= ""
+function toggle_column(item,column_name,iCol){
+	//if ($.map(dtable_columns, function (e) { return e["sName"] }).indexOf(column_name) != -1){
+	if (dtable_columns[iCol].isLoaded == true){
+		// column is already loaded, just need to toggle visilibyt
+		loaded_cols = dtable.fnSettings().aoColumns
+		loaded_iCol = $.map(loaded_cols, function (e) { return e["sName"] }).indexOf(column_name)
+		var bVis = loaded_cols[loaded_iCol].bVisible;
+		if (bVis){
+			$(item).children()[0].innerHTML= ""
+			dtable_columns[iCol].bVisible = false
+		} else {
+			$(item).children()[0].innerHTML= '<i class="icon-ok"></i>'
+			dtable_columns[iCol].bVisible = true
+		}
+		dtable.fnSetColumnVis( loaded_iCol, bVis ? false : true );	
 	} else {
-		$(item).children()[0].innerHTML= '<i class="icon-ok"></i>'
+		// must load column from database!
+		dtable_columns[iCol].isLoaded=true
+		dtable_columns[iCol].bVisible=true
+		column_string = "columns="
+		$(dtable_columns).each(function(index, el){
+								if (el.isDefault==false & el.isLoaded){
+									column_string += el.sName + ";"
+								}
+							   });
+		console.log(column_string)
+		var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string
+		reload_table(url, true);
 	}
-	oTable = $('#example').dataTable();
-	var ColNames = [];
-	$(oTable.fnSettings().aoColumns).each(function() { ColNames.push(this["sName"]) });
-	iCol = ColNames.indexOf(column_name)
-	var bVis = oTable.fnSettings().aoColumns[iCol].bVisible;
-	oTable.fnSetColumnVis( iCol, bVis ? false : true );
+	
 }
 
 /* download the filters from server, populate the sets[] array and set up the typeahead*/
