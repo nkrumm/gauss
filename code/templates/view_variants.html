@@ -14,8 +14,18 @@
 	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
 	<style>
 	.toolbar-pills .active a,
-	.toolbar-pills .active a:hover {
-    	background-color: #888888;
+	.toolbar-pills .active a:hover {background-color: #888888;}
+	.toolbar-btn {height: 40px !important}
+	.select-menu-item {
+		display: table-cell;
+		padding-right: 8px;
+	}
+	.blank {
+		width: 13px !important;
+	}
+	.select-menu {
+		padding-left: 8px !important;
+
 	}
 	</style>
 	<script>
@@ -193,17 +203,31 @@ $(document).ready(function() {
 {% block content %}
 	<div class="row-fluid">
 	<div class="span3">
-		<form class="form-inline" action="#">
+	<form class="form-inline" action="#">
 		<div class="input-append">
-	  	<input id="set_search" class='span8' style='height: 40px; font-size: 16px' accesskey='s' type="text" placeholder="Type to filter..." data-provide="typeahead" autocomplete="off" />
-	  	<button data-target="#myModal" role="button" style='height: 40px' class="btn" data-toggle="modal" onClick="set_up_filter_modal()">Browse</button>
-	  	<button class="btn" style='height: 40px' onClick='remove_all_filters();'>Clear</button>
-	  </div>
-	  	</form>
+	  		<input id="set_search" class='span8 toolbar-btn' style='font-size: 16px' accesskey='s' type="text" placeholder="Type to filter..." data-provide="typeahead" autocomplete="off" />
+	  		<button data-target="#myModal" role="button" class="btn toolbar-btn" data-toggle="modal" onClick="set_up_filter_modal()">Browse</button>
+	  		<button class="btn toolbar-btn" onClick='remove_all_filters();'>Clear</button>
+	  	</div>
+
+  	</form>
 	  	
 	</div>
-	<!--<div id="set_labels" class="span9">
-	</div>-->
+
+	<div class="span3">
+		<div class="btn-group">
+	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</span></button>
+  			<ul class="dropdown-menu">
+    			<!-- dropdown menu links -->
+				<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>Gene</span></a></li>
+				<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>Effect</a></span></li>
+    			<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>AA Change</a></span></li>
+    			<li><a class='select-menu' href="#"><span class='select-menu-item blank'></span><span class='select-menu-item'>GERP</span></a></li>
+    			<li><a class='select-menu' href="#"><span class='select-menu-item blank'></span><span class='select-menu-item'>ESP Frequency</span></a></li>
+  			</ul>
+	  	</div>
+
+	</div>
 	</div>
 
 	<table class="table table-hover table-condensed" id="example">
