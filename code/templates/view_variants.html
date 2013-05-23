@@ -12,6 +12,7 @@
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
 	<script src="/static/datatables/media/js/ColVis.min.js"></script>
 	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
+
 	<style>
 	.toolbar-pills .active a,
 	.toolbar-pills .active a:hover {background-color: #888888;}
@@ -19,9 +20,7 @@
 	.select-menu-item {
 		display: table-cell;
 		padding-right: 8px;
-	}
-	.blank {
-		width: 13px !important;
+		width: 14px !important;
 	}
 	.select-menu {
 		padding-left: 8px !important;
@@ -59,9 +58,38 @@
 		html_str += '<div id="set_labels" class="span10"></div>'
 		return html_str
 	}
+
+	function build_column_selector(index, element){
+		// create <li> elements for all the columns
+		col_name = element["sName"]
+		col_title = element["sName"]
+		if (element["bVisible"]){
+			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\")'><span class='select-menu-item'><i class='icon-ok'></i></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+		} else {
+			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\")'><span class='select-menu-item'></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+		}
+
+	}
+
 	/* Table initialisation */
 	var dtable;
+	var dtable_columns=[{"sTitle":"Chrom", "sWidth":"5%","sName":"chrom"},
+						{"sTitle":"Start", "sWidth":"7.5%","sName":"start"},
+						{"sTitle":"Stop", "sWidth":"7.5%","sName":"stop"},
+						{"sTitle":"Sample","bSearchable": true, "sWidth":"10%","sType": "numeric","sName":"sample"},
+						{"sTitle":"dbSNP","bSearchable": true, "sWidth":"10%","sName":"dbsnp"},
+						{"sTitle":"Ref","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"ref"},
+						{"sTitle":"Alt","bSearchable": false, "sWidth":"3%", "bSortable": false,"sName":"alt"},
+						{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%","sName":"filters"},
+						{"sTitle":"Gene","bSearchable": true, "sWidth":"10%","sName":"gene"},
+						{"sTitle":"Effect <a href='#'>highest</a> | <a href='#'>all</a>","bSearchable": true, "sWidth":"15%","sName":"effect"},
+						{"sTitle":"id","bSearchable": false,"sName":"id"}];
+	
+	var additional_columns=[{"sTitle": "GERP", "sName": "gerp"},
+						   {"sTitle": "AA Change", "sName": "aa_change"}]
+
 	$(document).ready(function() {
+
 		dtable = $('#example').dataTable( {
 			"sDom": "<'row-fluid'<'toolbar'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
@@ -71,25 +99,18 @@
 			"bDeferRender": true,
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
 			"bStateSave": true,
-			"aoColumns": [ 
-				{"sTitle":"Chrom", "sWidth":"5%"},
-				{"sTitle":"Start", "sWidth":"7.5%"},
-				{"sTitle":"Stop", "sWidth":"7.5%"},
-				{"sTitle":"Sample","bSearchable": true, "sWidth":"10%","sType": "numeric"},
-				{"sTitle":"dbSNP","bSearchable": true, "sWidth":"10%"},
-				{"sTitle":"Ref","bSearchable": false, "sWidth":"3%", "bSortable": false},
-				{"sTitle":"Alt","bSearchable": false, "sWidth":"3%", "bSortable": false},
-				{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%"},
-				{"sTitle":"Gene","bSearchable": true, "sWidth":"10%"},
-				{"sTitle":"Effect <a href='#'>highest</a> | <a href='#'>all</a>","bSearchable": true, "sWidth":"15%"},
-				{"sTitle":"id","bSearchable": false},
-			],
+			"aoColumns": dtable_columns,
 			"bProcessing": true,
         	"bServerSide": false,
         	"sAjaxSource": "/_variants.json?" + query_string
 		} );
 		console.log("/_variants.json?" + query_string)	
 		$("div.toolbar").html(build_toolbar());
+
+		//record columns-- todo: this will just set a "visible" flag in the columns array
+		$(dtable_columns).each(build_column_selector);
+		$(additional_columns).each(build_column_selector);
+
 	} );
 </script>
 
@@ -111,6 +132,9 @@ var sets = {}
 var query_string = "{{ query_string }}"
 var filter_string = ""
 var group_string = ""
+var column_string = ""
+
+
 function create_set_label(set_item){
 	id = set_item.filter_name
 	if (set_item["filter_title"] != undefined){
@@ -137,7 +161,6 @@ function remove_filter(item){
 	$("#"+item).remove();
 	sets[item].applied = false;
 	filter_string = build_filter_string(sets);
-	console.log('/_variants.json?' + query_string + "&" + filter_string);
 	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
 }
 
@@ -148,7 +171,6 @@ function remove_all_filters(){
 		console.log(sets[set])
 	};
 	filter_string = build_filter_string(sets);
-	console.log('/_variants.json?' + query_string + "&" + filter_string);
 	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);	
 }
 
@@ -157,7 +179,6 @@ function add_filter(item){
 	sets[item].applied = true;
 	sets[item].item = item
 	filter_string = build_filter_string(sets);
-	console.log('/_variants.json?' + query_string + "&" + filter_string);
 	reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string);
 }
 
@@ -173,7 +194,23 @@ function set_up_filter_modal(){
 }
 
 function reload_table(url){
+	console.log(url)
 	dtable.fnReloadAjax(url);
+	// update columns as nececassry 
+}
+
+function toggle_column(item,column_name){
+	if ($(item).children()[0].innerHTML != ""){
+		$(item).children()[0].innerHTML= ""
+	} else {
+		$(item).children()[0].innerHTML= '<i class="icon-ok"></i>'
+	}
+	oTable = $('#example').dataTable();
+	var ColNames = [];
+	$(oTable.fnSettings().aoColumns).each(function() { ColNames.push(this["sName"]) });
+	iCol = ColNames.indexOf(column_name)
+	var bVis = oTable.fnSettings().aoColumns[iCol].bVisible;
+	oTable.fnSetColumnVis( iCol, bVis ? false : true );
 }
 
 /* download the filters from server, populate the sets[] array and set up the typeahead*/
@@ -196,6 +233,11 @@ $(document).ready(function() {
 	} else {
 		variant_grouping_enabled = true;
 	}
+	// set up column selector
+	$('#column_selector').click(function(event){
+    	 event.stopPropagation();
+ 	});
+
 });
 </script>  
 {% endblock %}
@@ -217,13 +259,8 @@ $(document).ready(function() {
 	<div class="span3">
 		<div class="btn-group">
 	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</span></button>
-  			<ul class="dropdown-menu">
-    			<!-- dropdown menu links -->
-				<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>Gene</span></a></li>
-				<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>Effect</a></span></li>
-    			<li><a class='select-menu' href="#"><span class='select-menu-item'><i class="icon-ok"></i></span><span class='select-menu-item'>AA Change</a></span></li>
-    			<li><a class='select-menu' href="#"><span class='select-menu-item blank'></span><span class='select-menu-item'>GERP</span></a></li>
-    			<li><a class='select-menu' href="#"><span class='select-menu-item blank'></span><span class='select-menu-item'>ESP Frequency</span></a></li>
+  			<ul class="dropdown-menu" id="column_selector">
+    			<!-- dropdown menu links are built by build_column_selector()-->
   			</ul>
 	  	</div>
 
