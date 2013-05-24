@@ -105,6 +105,7 @@ def parse_annotations(info_field):
         if key == "EFF":
             # this is the SNPEFF field, parse it appropriately
             #NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Gtt/Att|V5I|293|HNRNPCL1||CODING|NM_001013631.1|2|1),
+            #MODERATE|MISSENSE|cGc/cCc|R1113P|1159|INPP5D||CODING|NM_005541.3|25|1|WARNING_TRANSCRIPT_INCOMPLETE
             EFF_LIST = []
             for effect in value.split(","):
                 EFF = {}
@@ -113,7 +114,7 @@ def parse_annotations(info_field):
                     # no optional warning field
                     _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _ = t.split("|")
                 except:
-                   _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _, EFF["err"][:-1] = t.split("|") #-1 removes trailing ")"
+                    _, EFF["f"], EFF["cc"], EFF["aa"], _, EFF["g"], _, _, EFF["tx"], EFF["r"], _, EFF["err"] = t[:-1].split("|") #-1 removes trailing ")"
                 # clear out any empty fields!
                 EFF_LIST.append({k:v for k,v in EFF.iteritems() if v is not ''})
             out["EFF"] = EFF_LIST
