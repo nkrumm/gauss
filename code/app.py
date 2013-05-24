@@ -89,8 +89,9 @@ def variants():
 def genotype_details(genotype_id):
     var_mgr = variant_manager(db="test",conn=g.conn)
     data = var_mgr.get_variant(genotype_id)
-    for ix, row in enumerate(data["annotations"]["EFF"]):
-        data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
+    if "EFF" in data["annotations"]:
+        for ix, row in enumerate(data["annotations"]["EFF"]):
+            data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
     return render_template("genotype_details.html", data=data)
 
 @app.route('/variants/id:<chrom>:<start>')
