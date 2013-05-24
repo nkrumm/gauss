@@ -68,14 +68,17 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
  
 <div class="tab-content">
   <div class="tab-pane active" id="dbnsfp">
-    <dl class="dl-horizontal">
-      {% for row in data["annotations"]["dbNSFP"] %}
-        
-        <dt>{{ row }}</dt>
-          <dd>{{ data["annotations"]["dbNSFP"][row]}}</dd>
-        
-      {% endfor %}
-    </dl>
+    
+      {% if "dbNSFP" in data["annotations"]  %}
+        <dl class="dl-horizontal">
+        {% for row in data["annotations"]["dbNSFP"] %}
+          <dt>{{ row }}</dt><dd>{{ data["annotations"]["dbNSFP"][row]}}</dd>
+        {% endfor %}
+        </dl>
+      {% else %}
+        <em>No dbNSF annotations for this variant!</em>
+      {% endif %}
+    
   </div>
   <div class="tab-pane" id="gatk">
     <dl class="dl-horizontal">
