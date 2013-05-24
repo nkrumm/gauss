@@ -48,6 +48,7 @@ formatters = {'AB': float,
               'dbNSFP_SIFT_score': float,
               'dbNSFP_SLR_test_statistic': float,
               'dbNSFP_Uniprot_id': lambda x: x.split(","),
+              'dbNSFP_Ensembl_transcriptid': lambda x: x.split(","),
               'dbNSFP_phyloP': float}
 
 short_key_names = {'Alignability': 'ALI',
@@ -75,6 +76,7 @@ short_key_names = {'Alignability': 'ALI',
                    'dbNSFP_SIFT_score': 'SIFT',
                    'dbNSFP_SLR_test_statistic': 'SLR',
                    'dbNSFP_Uniprot_id': 'UPid',
+                   'dbNSFP_Ensembl_transcriptid': 'ETID',
                    'dbNSFP_phyloP': 'PyP'}
 
                     
