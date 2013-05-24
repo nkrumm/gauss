@@ -187,6 +187,9 @@ def json_variants(return_query=False):
                 projection[c[0]] = True
             elif (c[0] == "annotations") and (c[1] == "EFF"):
                 custom_column_list.append(c)
+            elif (c[0] == "annotations") and (c[1] == "dbNSFP"):
+                custom_column_list.append(c)
+                projection["annotations.dbNSFP." +c[2]] = True
             else:
                 pass
 
@@ -280,7 +283,7 @@ def json_variants(return_query=False):
         effect_str = ""
         gene_str = ""
         
-        for eff in row["annotations"]["EFF"]:
+        for eff in row["annotations"].get("EFF",[]):
             eff_code = eff.get("e", None)
             eff_type = VARIANT_EFFECTS[eff_code]
             eff_rank = VARIANT_RANKS[eff_type]
@@ -307,9 +310,18 @@ def json_variants(return_query=False):
                 if len(c) == 1:
                     row_data.append(row.get(c[0],''))
                 else:
-                    val =row[c[0]][c[1]][0].get(c[2],'')
-                    row_data.append(val)
-                    print val
+                    if c[1] == "EFF":
+                        try:
+                            val =row[c[0]][c[1]][0].get(c[2],'')
+                            row_data.append(val)
+                        except KeyError:
+                            row_data.append('')
+                    elif c[1] == "dbNSFP":
+                        try:
+                            val =row[c[0]][c[1]].get(c[2],'')
+                            row_data.append(val)
+                        except KeyError:
+                            row_data.append('')
 
         out["aaData"].append(row_data)
     
