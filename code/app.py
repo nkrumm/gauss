@@ -200,8 +200,17 @@ def json_variants(return_query=False):
     if ("include_filters" in request.args)  and len(request.args["include_filters"]) > 0:
         for f in request.args["include_filters"].strip(";").split(";"):
             filter_type, filter_id = f.split(":")
+            filter_mgr = filter_manager(db="test",conn=g.conn)
+            filter_obj = filter_mgr.get_filter(filter_id)[0]
             if filter_type == "set":
                 query["filter"]["$in"].append(filter_id)
+            elif "query_repr" in filter_obj:
+                qr = filter_obj["query_repr"]
+                for i in qr:
+                    field = i["field"]
+                    op = i["op"]
+                    value = i["value"]
+                    query[field][op] = value
             elif filter_type == "attr":
                 if filter_id == "truncating":
                     query["annotations.EFF.e"]["$in"]=["FRAME_SHIFT", "STOP_GAINED"]
