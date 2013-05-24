@@ -4,6 +4,10 @@
 {% set active_page = "view_variants" %}
 {% block header%}
 <link href="/static/custom.css" rel="stylesheet" media="screen">
+<style>
+.annotation-tabs li {font-size: 16px}
+.annotation-tabs li.active {font-weight: bold}
+</style>
 {% endblock %}
 {% block title %}
 Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto if data.stop }}
@@ -32,7 +36,7 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
 </dl>
 
 
-<h3>SnpEff Annotations (Functional predictions)</h3>
+<h3>Annotations and Functional predictions</h3>
 <div class="row-fluid">
   <div class="span8">
 <table class="table">
@@ -55,21 +59,45 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
 </div></div>
 
 
+<ul class="nav nav-tabs annotation-tabs" id="myTab">
+  <li class="active"><a href="#dbnsfp" data-toggle="tab">dbNSFP Annotations</a></li>
+  <li><a href="#gatk" data-toggle="tab">GATK Annotations</a></li>
+  <li><a href="#raw" data-toggle="tab">Raw Record</a></li>
+</ul>
+ 
+<div class="tab-content">
+  <div class="tab-pane active" id="dbnsfp">
+    <dl class="dl-horizontal">
+      {% for row in data["annotations"]["dbNSFP"] %}
+        
+        <dt>{{ row }}</dt>
+          <dd>{{ data["annotations"]["dbNSFP"][row]}}</dd>
+        
+      {% endfor %}
+    </dl>
+  </div>
+  <div class="tab-pane" id="gatk">
+    <dl class="dl-horizontal">
+      {% for row in data["annotations"] %}
+        {% if row not in ["EFF","dbNSFP"] %}
+        <dt>{{ row }}</dt>
+          <dd>{{ data["annotations"][row]}}</dd>
+        {% endif %}
+      {% endfor %}
+    </dl>
+  </div>
+  <div class="tab-pane" id="raw">
+    <h3>Record</h3>
+    {{ data | pprint(verbose=True)}}
+    {% endblock %}
+  </div>
+</div>
 
-<h3>VCF Annotations</h3>
-<dl class="dl-horizontal">
-  {% for row in data["annotations"] %}
-    {% if row != "EFF" %}
-    <dt>{{ row }}</dt>
-      <dd>{{ data["annotations"][row]}}</dd>
-    {% endif %}
-  {% endfor %}
-</dl>
 
-<h3>Record</h3>
-{{ data | pprint(verbose=True)}}
 
-{% endblock %}
+
+
+
 
 
 {% macro esp_linkout(chrom, start, stop) -%}
