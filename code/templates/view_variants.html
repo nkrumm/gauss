@@ -54,7 +54,7 @@
 			}
 		})
 		dtable = $('#example').dataTable( {
-			"sDom": "<'row-fluid'<'toolbar'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
+			"sDom": "<'row-fluid'<'test'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
 			"oLanguage": {
 				"sLengthMenu": "_MENU_ variants per page"
@@ -70,7 +70,7 @@
 		// build the column_selector dropdown box based on all columns
 		$("#column_selector").empty()
 		$(dtable_columns).each(build_column_selector);
-		$("div.toolbar").html(build_toolbar());
+		
 	}
 	/* Table initialisation */
 	var dtable;
@@ -99,7 +99,7 @@
 	$(document).ready(function() {
 		build_dtable("/_variants.json?" + query_string);
 		console.log("/_variants.json?" + query_string);
-		
+		$("div.toolbar").html(build_toolbar());
 	} );
 </script>
 
@@ -299,7 +299,7 @@ $(document).ready(function() {
 
 	</div>
 	</div>
-
+	<div class='toolbar'></div>
 	<table class="table table-hover table-condensed" id="example">
 	</table>
 
