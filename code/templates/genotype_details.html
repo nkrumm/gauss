@@ -6,7 +6,7 @@
 <link href="/static/custom.css" rel="stylesheet" media="screen">
 {% endblock %}
 {% block title %}
-Genotype Details
+Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto if data.stop }}
 {% endblock %}
 
 {% block content %}
@@ -15,7 +15,7 @@ Genotype Details
 <h3>Basic Information</h3>
 <dl class="dl-horizontal">
   <dt>Position</dt>
-    <dd>chr{{ data["chrom"] }}:{{data["start"]}}-{{data["end"]}}</dd>
+    <dd>chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto if data.stop }} (<a href="{{ ucsc_linkout(data["chrom"], data["start"], data["end"]) }}" target="_blank">UCSC</a>, <a href="{{ esp_linkout(data["chrom"], data["start"], data["end"]) }}" target="_blank">ESP</a>)</dd>
   <dt>Sample ID</dt>
     <dd><a href='/samples/id:{{ data["sample_id"] }}'>{{ data["sample_name"] }}</a></dd>
   <dt>Alt / Ref</dt>
@@ -70,3 +70,22 @@ Genotype Details
 {{ data | pprint(verbose=True)}}
 
 {% endblock %}
+
+
+{% macro esp_linkout(chrom, start, stop) -%}
+    {% if stop == None %}
+      http://evs.gs.washington.edu/EVS/PopStatsServlet?searchBy=chromosome&chromosome={{ chrom }}&chromoStart={{ start }}&chromoEnd={{ start + 1 }}
+    {% else %}
+    http://evs.gs.washington.edu/EVS/PopStatsServlet?searchBy=chromosome&chromosome={{ chrom }}&chromoStart={{ start }}&chromoEnd={{ stop }}
+    {% endif %}
+    
+{%- endmacro %}
+
+{% macro ucsc_linkout(chrom, start, stop) -%}
+    {% if stop == None %}
+      http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&org=human&position=chr{{ chrom }}%3A{{ start }}-{{ start + 1}}
+    {% else %}
+      http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&org=human&position=chr{{ chrom }}%3A{{ start }}-{{ stop }}
+    {% endif %}
+    
+{%- endmacro %}
