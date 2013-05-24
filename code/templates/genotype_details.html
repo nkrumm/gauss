@@ -62,6 +62,7 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
 <ul class="nav nav-tabs annotation-tabs" id="myTab">
   <li class="active"><a href="#dbnsfp" data-toggle="tab">dbNSFP Annotations</a></li>
   <li><a href="#gatk" data-toggle="tab">GATK Annotations</a></li>
+  <li><a href="#gene_model" data-toggle="tab">Gene Model</a></li>
   <li><a href="#raw" data-toggle="tab">Raw Record</a></li>
 </ul>
  
@@ -85,6 +86,9 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
         {% endif %}
       {% endfor %}
     </dl>
+  </div>
+  <div class="tab-pane" id="gene_model">
+    Future home of a NikPlot(tm)
   </div>
   <div class="tab-pane" id="raw">
     <h3>Record</h3>
