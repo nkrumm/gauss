@@ -8,6 +8,77 @@ from cStringIO import StringIO
 from bson.objectid import ObjectId
 import datetime
 
+
+formatters = {'AB': float,
+              'AC': float,
+              'AF': float,
+              'AN': float,
+              'Alignability': float,
+              'BaseQRankSum': float,
+              'DB': float,
+              'DP': float,
+              'Dels': float,
+              'EFF': None,
+              'HRun': float,
+              'LowMQ': lambda x: [float(y) for y in x.split(",")],
+              'MQ': float,
+              'MQ0': float,
+              'MQRankSum': float,
+              'QD': float,
+              'SB': float,
+              'dbNSFP_1000Gp1_AC': float,
+              'dbNSFP_1000Gp1_AFR_AC': float,
+              'dbNSFP_1000Gp1_AMR_AC': float,
+              'dbNSFP_1000Gp1_ASN_AC': float,
+              'dbNSFP_1000Gp1_EUR_AC': float,
+              'dbNSFP_29way_logOdds': float,
+              'dbNSFP_29way_pi': lambda x: [float(y) for y in x.split(":")],
+              'dbNSFP_Ancestral_allele': str,
+              'dbNSFP_ESP6500_AA_AF': float,
+              'dbNSFP_ESP6500_EA_AF': float,
+              'dbNSFP_FATHMM_score': float,
+              'dbNSFP_GERP++_NR': float,
+              'dbNSFP_GERP++_RS': float,
+              'dbNSFP_LRT_Omega': float,
+              'dbNSFP_LRT_score': float,
+              'dbNSFP_MutationAssessor_score': float,
+              'dbNSFP_MutationTaster_score': float,
+              'dbNSFP_Polyphen2_HDIV_score': lambda x: [float(y) for y in x.split(",")],
+              'dbNSFP_Polyphen2_HVAR_score': lambda x: [float(y) for y in x.split(",")],
+              'dbNSFP_SIFT_score': float,
+              'dbNSFP_SLR_test_statistic': float,
+              'dbNSFP_Uniprot_id': lambda x: x.split(","),
+              'dbNSFP_phyloP': float}
+
+short_key_names = {'Alignability': 'ALI',
+                   'BaseQRankSum': 'BQRS',
+                   'MQRankSum': 'MQRS',
+                   'dbNSFP_1000Gp1_AC': '1gALLac',
+                   'dbNSFP_1000Gp1_AFR_AC': '1gAFRac',
+                   'dbNSFP_1000Gp1_AMR_AC': '1gAMRac',
+                   'dbNSFP_1000Gp1_ASN_AC': '1gASNac',
+                   'dbNSFP_1000Gp1_EUR_AC': '1gEURac',
+                   'dbNSFP_29way_logOdds': '29wayLO',
+                   'dbNSFP_29way_pi': '29wayPi',
+                   'dbNSFP_Ancestral_allele': 'AncAll',
+                   'dbNSFP_ESP6500_AA_AF': 'ESPaa',
+                   'dbNSFP_ESP6500_EA_AF': 'ESPea',
+                   'dbNSFP_FATHMM_score': 'FATHMM',
+                   'dbNSFP_GERP++_NR': 'GERPnr',
+                   'dbNSFP_GERP++_RS': 'GERPrs',
+                   'dbNSFP_LRT_Omega': 'LRTo',
+                   'dbNSFP_LRT_score': 'LRTs',
+                   'dbNSFP_MutationAssessor_score': 'MAs',
+                   'dbNSFP_MutationTaster_score': 'MTs',
+                   'dbNSFP_Polyphen2_HDIV_score': 'P2hdiv',
+                   'dbNSFP_Polyphen2_HVAR_score': 'P2hvar',
+                   'dbNSFP_SIFT_score': 'SIFT',
+                   'dbNSFP_SLR_test_statistic': 'SLR',
+                   'dbNSFP_Uniprot_id': 'UPid',
+                   'dbNSFP_phyloP': 'PyP'}
+
+                    
+
 def read_vcf(vcf_filename):
     s = StringIO()
     vcf_header_lines = ""
@@ -44,8 +115,18 @@ def parse_annotations(info_field):
                 # clear out any empty fields!
                 EFF_LIST.append({k:v for k,v in EFF.iteritems() if v is not ''})
             out["EFF"] = EFF_LIST
+        elif key[0:6] == "dbNSFP":
+            # These are tne dbNSFP fields, process them appropriately!
+            if "dbNSFP" not in out:
+                out["dbNSFP"] = {}
+            try:
+                k = short_key_names.get(key,key)
+                out["dbNSFP"][k] = formatters[key](value)
+            except ValueError:
+                print key, value
         else:
-            out[key] = value # TODO, get the formatting of values down here!
+            k = short_key_names.get(key,key)
+            out[k] = formatters[key](value)
     return out
 
 
