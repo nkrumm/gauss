@@ -271,6 +271,8 @@ def json_variants(return_query=False):
 
     else:
         grouped = False
+
+        print query
         if len(query) == 0:
             #query = {"_id":{"$ne":""}}
             query = {}
