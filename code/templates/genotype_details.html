@@ -3,7 +3,10 @@
 
 {% set active_page = "view_variants" %}
 {% block header%}
+<link href="/static/dashboard.css" rel="stylesheet" media="screen">
 <link href="/static/custom.css" rel="stylesheet" media="screen">
+<script src="/static/d3.v3/d3.v3.min.js"></script>
+<script src="/static/dashboard.js"></script>
 <style>
 .annotation-tabs li {font-size: 16px}
 .annotation-tabs li.active {font-weight: bold}
@@ -60,19 +63,39 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
 
 
 <ul class="nav nav-tabs annotation-tabs" id="myTab">
-  <li class="active"><a href="#dbnsfp" data-toggle="tab">dbNSFP Annotations</a></li>
-  <li><a href="#gatk" data-toggle="tab">GATK Annotations</a></li>
+  <li class="active"><a href="#summary" data-toggle="tab">Dashboard</a></li>
   <li><a href="#gene_model" data-toggle="tab">Gene Model</a></li>
+  <li><a href="#dbnsfp" data-toggle="tab">dbNSFP Annotations</a></li>
+  <li><a href="#gatk" data-toggle="tab">GATK Annotations</a></li>
+  
   <li><a href="#raw" data-toggle="tab">Raw Record</a></li>
 </ul>
  
 <div class="tab-content">
-  <div class="tab-pane active" id="dbnsfp">
+  <div class="tab-pane active" id="summary">
+<!--<div style="padding-left: 10px"><img src="/static/mockup/dashboard_mockup.png" width="700px"/></div>-->
+  <div id="div-dashboard"></div>
+   
+   {% if "dbNSFP" in data["annotations"]  %}    
+    <script>
+      score_data  = {{ data["dashboard"]["scores"]|tojson|safe }}
+      freq_data = {{ data["dashboard"]["freq"]|tojson|safe }}
+      gatk_data = {{ data["dashboard"]["gatk"]|tojson|safe }}
+
+      make_dashboard("#div-dashboard", score_data, freq_data, gatk_data);
+    </script>
+  {% else %}
+     <em>No dbNSF annotations for this variant!</em>
+  {% endif %}
+  
+
+  </div>
+  <div class="tab-pane" id="dbnsfp">
     
       {% if "dbNSFP" in data["annotations"]  %}
         <dl class="dl-horizontal">
         {% for row in data["annotations"]["dbNSFP"] %}
-          <dt>{{ row }}</dt><dd>{{ data["annotations"]["dbNSFP"][row]}}</dd>
+          <dt>{{ row }}</dt><dd>{{- data["annotations"]["dbNSFP"][row] -}}</dd>
         {% endfor %}
         </dl>
       {% else %}

@@ -92,6 +92,30 @@ def genotype_details(genotype_id):
     if "EFF" in data["annotations"]:
         for ix, row in enumerate(data["annotations"]["EFF"]):
             data["annotations"]["EFF"][ix]["effect_code"] = VARIANT_EFFECTS[row["e"]]
+    data["dashboard"] = {}
+    data["dashboard"]["gatk"] = []
+    data["dashboard"]["gatk"].append({"title": "QUAL", "score": data["qual"]})
+    #data["dashboard"]["gatk"].append({"title": "DATA", "score": data["data"]})
+    data["dashboard"]["gatk"].append({"title": "FILTER", "score": "GATK_filter" in data["filter"]})
+    for name, value in data["annotations"].items():
+        if name in ["MQ", "DP", "AB"]:
+            data["dashboard"]["gatk"].append({"title": name, "score": value})
+
+    if "dbNSFP" in data["annotations"]:
+        data["dashboard"]["scores"] = []
+        for score_name, score_value in data["annotations"]["dbNSFP"].items():
+            print score_name, score_value
+            data["dashboard"]["scores"].append({"title":score_name, "score": score_value})
+
+        data["dashboard"]["freq"] = [{"title": "ESP", 
+                                      "freqs": [{"pop":"AA", "freq": round(data["annotations"]["dbNSFP"].get("ESPaa", 0),3)},
+                                                {"pop":"EA", "freq": round(data["annotations"]["dbNSFP"].get("ESPea", 0),3)}]},
+                                     {"title": "1KG", "overallfreq": data["annotations"]["dbNSFP"].get("1gALLac", 0),
+                                      "freqs": [{"pop":"AFR", "freq": data["annotations"]["dbNSFP"].get("1gAFRac",0)},
+                                                {"pop":"EUR", "freq": data["annotations"]["dbNSFP"].get("1gEURac",0)},
+                                                {"pop":"ASN", "freq": data["annotations"]["dbNSFP"].get("1gASNac",0)},
+                                                {"pop":"AMR", "freq": data["annotations"]["dbNSFP"].get("1gAMRac",0)}]}]
+
     return render_template("genotype_details.html", data=data)
 
 @app.route('/variants/id:<chrom>:<start>')
