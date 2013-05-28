@@ -1,0 +1,31 @@
+text {
+	font-family: Helvetica, Arial, sans-serif;
+}
+.title {
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.score {
+	font-size: 24px;
+}
+
+.dashboard-label {
+	font-size: 12px;
+	font-weight: bold;
+}
+.freq {
+	font-size: 14px;
+}
+
+.freq.large {
+	font-size: 18px;
+}
+
+.row-title {
+	font-size: 24px;
+	font-weight: bold;
+}
+.dashboard-icon {
+	font-family: FontAwesome;
+}
