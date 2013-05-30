@@ -243,4 +243,18 @@ class filter_manager(manager_template):
     def delete_filter(self, filter_name):
         self.documents.remove({"filter_name":filter_name})
 
+class uniprot_manager(manager_template):
+    collection = "records"
+    document_type = Filter
 
+    def __init__(self, db, conn):
+        self.db = db
+        self.conn = conn
+        super(uniprot_manager, self).__init__(
+            db=self.db,
+            conn=self.conn,
+            collection=self.collection,
+            doctype=self.document_type)
+
+    def get_uniprot_record_by_refseq_id(self, refseq_id):
+        return self.documents.find({"xref.RefSeq": refseq_id},{"_id":0})
