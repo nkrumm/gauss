@@ -3,7 +3,7 @@ from flask import render_template, Markup, g, request, jsonify, redirect, Respon
 import operator
 import os
 from collections import defaultdict
-from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager
+from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager, uniprot_manager
 import annotation
 from bson import json_util
 from constants import VARIANT_EFFECTS, VARIANT_RANKS, VARIANT_SHORTNAMES
@@ -443,6 +443,14 @@ def jobs():
     rows["completed"] = job_mgr.get_jobs(status="completed", limit=10)
     rows["failed"] =  job_mgr.get_jobs(status="failed", limit=10)
     return render_template("jobs.html", rows=rows, columns=["job_name","status", "type", "date_registered"])
+
+
+@app.route('/uniprot/<refseq_accession>.json')
+def uniprot_record(refseq_accession):
+    mgr = uniprot_manager(db="uniprot", conn=g.conn)
+    data = mgr.get_uniprot_record_by_refseq_id(refseq_accession)
+    print data[0]
+    return jsonify(result=[i for i in data])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
