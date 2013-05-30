@@ -14,9 +14,11 @@
 	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
 
 	<style>
+
 	.toolbar-pills .active a,
 	.toolbar-pills .active a:hover {background-color: #888888;}
 	.toolbar-btn {height: 40px !important}
+
 	.select-menu-item {
 		display: table-cell;
 		padding-right: 8px;
@@ -26,13 +28,16 @@
 		padding-left: 8px !important;
 
 	}
+	.variant_table {
+		padding-top: 20px;
+	}
 	</style>
 	<script>
 	function build_toolbar(){
-		html_str = '<div class="span2"><ul class="nav nav-pills toolbar-pills">';
-		html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
-		html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul></div>';
-		html_str += '<div id="set_labels" class="span10"></div>'
+		//html_str = '<div class="span2">';//<ul class="nav nav-pills toolbar-pills">';
+		//html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
+		//html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul></div>';
+		html_str = '<div id="set_labels" class="span10"></div>'
 		return html_str
 	}
 
@@ -123,6 +128,7 @@ var filter_string = ""
 var group_string = ""
 var column_string = ""
 var grouping_state = "genotype"
+var view_mode = ""
 
 function toggle_grouping(grouping){
 	if (variant_grouping_enabled & grouping == "variant"){
@@ -142,6 +148,17 @@ function toggle_grouping(grouping){
 		$("#genotype_pill").addClass("active")
 		$("#variant_pill").removeClass("active")			
 		$($("#example thead tr th")[3]).text("Sample")
+	}
+}
+
+function toggle_view(view_mode){
+	if (view_mode == "table"){
+		$(".variant_table").show()
+		$(".geneplot_div").hide()
+	}
+	else {
+		$(".variant_table").hide()
+		$(".geneplot_div").show()
 	}
 }
 
@@ -261,7 +278,8 @@ $(document).ready(function() {
 							);
 	});
 	if (query_string == ""){
-		$("#variant_pill").addClass("disabled")
+		$("#variant_group_btn").addClass("disabled")
+		$("#genotype_group_btn").addClass("active")
 		variant_grouping_enabled = false;
 		console.log("disabling group by variant")
 	} else {
@@ -290,19 +308,42 @@ $(document).ready(function() {
 	  	
 	</div>
 
-	<div class="span3">
+	<div class="span7">
+		
 		<div class="btn-group">
-	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</span></button>
+	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</button>
   			<ul class="dropdown-menu" id="column_selector">
     			<!-- dropdown menu links are built by build_column_selector()-->
   			</ul>
 	  	</div>
+	  	
+	  	<div class="btn-group" id='grouping_toggle_buttons' data-toggle="buttons-radio">
+		  <button class="btn toolbar-btn toolbar-btn-radio active" id='genotype_group_btn' onClick='toggle_grouping("genotype"); return false;'><b>Genotypes</b></button>
+		  <button class="btn toolbar-btn toolbar-btn-radio" id='variant_group_btn' onClick='toggle_grouping("variant"); return false;'><b>Variants</b></button>
+		</div>
+		<div class="btn-group" id='table_view_toggle_buttons' data-toggle="buttons-radio">
+		  <button class="btn toolbar-btn toolbar-btn-radio active" id='table_view_btn' onClick='toggle_view("table"); return false;'><b>Table</b></button>
+		  <button class="btn toolbar-btn toolbar-btn-radio" id='geneplot_view_btn' onClick='toggle_view("geneplot"); return false;'><b>GenePlot</b></button>
+		</div>
 
+		<div class="btn-group pull-right">
+			<button class="btn toolbar-btn dropdown-toggle pull-right" data-toggle="dropdown" onClick=''><i class="icon-file"></i> Download</button>
+			<ul class="dropdown-menu" id="save_selector">
+    			<li><a class='select-menu'>As CSV</a></li>
+    			<li><a class='select-menu'>As HTML</a></li>
+  			</ul>
+		</div>
 	</div>
 	</div>
 	<div class='toolbar'></div>
-	<table class="table table-hover table-condensed" id="example">
-	</table>
+	<div class='variant_table'>
+		<table class="table table-hover table-condensed" id="example"></table>
+	</div>
+
+	<div class='geneplot_div'>
+		<div class='span12'>
+		ITS A GENE PLOT</div>
+	</div>
 
 
 	<div id="myModal" class="modal hide" style="margin: 120px 0 0 -280px;" tabindex="-1" data-backdrop="0" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
