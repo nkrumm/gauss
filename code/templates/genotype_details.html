@@ -7,6 +7,9 @@
 <link href="/static/custom.css" rel="stylesheet" media="screen">
 <script src="/static/d3.v3/d3.v3.min.js"></script>
 <script src="/static/dashboard.js"></script>
+<script src="/static/gene_model.js"></script>
+<link href="/static/gene_model.css" rel="stylesheet" media="screen">
+
 <style>
 .annotation-tabs li {font-size: 16px}
 .annotation-tabs li.active {font-weight: bold}
@@ -44,7 +47,7 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
   <div class="span8">
 <table class="table">
   <thead>
-    <th>Type</th><th>Gene</th><th>AA Change</th><th>Codon Change</th><th>Transcript</th><th>Exon #</th>
+    <th>Type</th><th>Gene</th><th>AA Change</th><th>Codon Change</th><th>Transcript</th><th>Exon #</th><th></th>
   </thead>
   <tbody>
     {% for row in data["annotations"]["EFF"] %}
@@ -55,7 +58,8 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
         <td>{{row["cc"]}}</td>
         <td>{{row["tx"]}}</td>
         <td>{{row["r"]}}</td>
-      <tr>
+        <td><a href="#" onClick="show_geneplot('{{row["tx"]}}','{{row["aa"]}}');">View GenePlot</a></td>
+      </tr>
     {% endfor %}
     </tbody>
   </table>
@@ -64,7 +68,7 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
 
 <ul class="nav nav-tabs annotation-tabs" id="myTab">
   <li class="active"><a href="#summary" data-toggle="tab">Dashboard</a></li>
-  <li><a href="#gene_model" data-toggle="tab">Gene Model</a></li>
+  <li><a href="#gene_model" data-toggle="tab">GenePlot</a></li>
   <li><a href="#dbnsfp" data-toggle="tab">dbNSFP Annotations</a></li>
   <li><a href="#gatk" data-toggle="tab">GATK Annotations</a></li>
   
@@ -78,7 +82,7 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
    
    {% if "dbNSFP" in data["annotations"]  %}    
     <script>
-      score_data  = {{ data["dashboard"]["scores"]|tojson|safe }}
+      score_data = {{ data["dashboard"]["scores"]|tojson|safe }}
       freq_data = {{ data["dashboard"]["freq"]|tojson|safe }}
       gatk_data = {{ data["dashboard"]["gatk"]|tojson|safe }}
 
@@ -114,7 +118,48 @@ Genotype Details: chr{{ data["chrom"] }}: {{data["start"]}}{{ '-%d' % data.sto i
     </dl>
   </div>
   <div class="tab-pane" id="gene_model">
-    Future home of a NikPlot(tm)
+    <div id="gene_model_div"></div>
+    <script>
+    var isoform = "{{data["annotations"]["EFF"][0]["tx"] }}";
+    var gene_model = d3.select("#gene_model_div").
+                append("svg:svg").
+                attr("id","gene_model_svg").
+                attr("width", 900).
+                attr("height", 300);
+    function show_geneplot(isoform, position){
+        variants_positions = position.match(numberPattern);
+        $.getJSON("/uniprot/"+isoform+".json", function(d) {
+                   data = d;
+                   domains = []
+                   features = d["result"][0]["features"];
+                   for (var i = 0; i < features.length; i++) {
+                        if (PLOT_FEATURES.indexOf(features[i][0]) >= 0){
+                            domains.push({"start": features[i][1], 
+                                          "stop": features[i][2],
+                                          "type": features[i][0],
+                                          "name": features[i][3]
+                                        });
+                        }
+                   }
+                   aa_length = d["result"][0]["sequence_length"]
+                   console.log(aa_length)
+                   draw_model(gene_model, domains, aa_length);
+                   draw_variants(variants_positions)
+                });
+        $('#myTab a[href="#gene_model"]').tab('show')
+    };  
+
+    var data;
+    var domains;
+    var eff_data = {{ data["annotations"]["EFF"]|tojson|safe }}
+    var numberPattern = /\d+/g;
+    // variants_positions = []
+    // for (var i=0; i < eff_data.length; i++){
+    //     variants_positions = variants_positions.concat(eff_data[i]["aa"].match(numberPattern))
+    // }
+    //show_geneplot(isoform, variants_positions)
+    
+    </script>
   </div>
   <div class="tab-pane" id="raw">
     <h3>Record</h3>
