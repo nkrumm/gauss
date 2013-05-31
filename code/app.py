@@ -140,6 +140,7 @@ def variant_details(chrom, start, end=None):
 @app.route('/samples/<sample_id>/variants')
 def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None):
     var_mgr = variant_manager(db="test",conn=g.conn)
+    isoform = None
     if sample_id is not None:
         title = "%s" % sample_id
         query_string = "sample_id=%s" % sample_id
@@ -158,7 +159,7 @@ def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None):
 
     filter_mgr = filter_manager(db="test",conn=g.conn)
     filters = filter_mgr.get_all_filters()
-    return render_template("view_variants.html", title=Markup(title), query_string=Markup(query_string), filters=filters)
+    return render_template("view_variants.html", title=Markup(title), query_string=Markup(query_string), filters=filters, isoform=isoform)
 
 def is_arg(argname):
     return (argname in request.args) and (len(request.args[argname]) > 0)
