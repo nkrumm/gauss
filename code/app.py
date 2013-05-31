@@ -349,7 +349,7 @@ def json_variants(return_query=False):
                 else:
                     if c[1] == "EFF":
                         try:
-                            val =row[c[0]][c[1]][0].get(c[2],'')
+                            val = row[c[0]][c[1]][0].get(c[2], '')
                             row_data.append(val)
                         except KeyError:
                             row_data.append('')
