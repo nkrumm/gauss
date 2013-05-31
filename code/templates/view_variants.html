@@ -12,13 +12,17 @@
 	<script src="/static/datatables/media/js/jquery.dataTables.min.js"></script>
 	<script src="/static/datatables/media/js/ColVis.min.js"></script>
 	<script src="/static/datatables/datatables.view_variants_specific.js"></script>	
-
+	<script src="/static/d3.v3/d3.v3.min.js"></script>
+	<script src="/static/gene_model.js"></script>
+	<link href="/static/gene_model.css" rel="stylesheet" media="screen">
 	<style>
 
 	.toolbar-pills .active a,
 	.toolbar-pills .active a:hover {background-color: #888888;}
 	.toolbar-btn {height: 40px !important}
-
+	.toolbar-btn-radio{
+		font-weight: bold;
+	}
 	.select-menu-item {
 		display: table-cell;
 		padding-right: 8px;
@@ -32,13 +36,11 @@
 		padding-top: 20px;
 	}
 	</style>
-	<script>
+
+<script>
+	
 	function build_toolbar(){
-		//html_str = '<div class="span2">';//<ul class="nav nav-pills toolbar-pills">';
-		//html_str += '<li id="genotype_pill" class="active"><a href="#" onClick="toggle_grouping(\'genotype\')">By genotype</a></li>';
-		//html_str += '<li id="variant_pill"><a href="#" onClick="toggle_grouping(\'variant\')">By variant</a></li></ul></div>';
-		html_str = '<div id="set_labels" class="span10"></div>'
-		return html_str
+		$("div.toolbar").html('<div id="set_labels" class="span10"></div>');
 	}
 
 	function build_column_selector(index, element){
@@ -46,9 +48,15 @@
 		col_name = element["sName"]
 		col_title = element["sTitle"]
 		if (element["bVisible"]){
-			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'><span class='select-menu-item'><i class='icon-ok'></i></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+			$("#column_selector").append("<li><a class='select-menu' href='#' " +
+												 "onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'>" + 
+												 "<span class='select-menu-item'><i class='icon-ok'></i></span>" +
+												 "<span class='select-menu-item'>" + col_title + "</a></span></li>")
 		} else {
-			$("#column_selector").append("<li><a class='select-menu' href='#' onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'><span class='select-menu-item'></span><span class='select-menu-item'>" + col_title + "</a></span></li>")
+			$("#column_selector").append("<li><a class='select-menu' href='#' " +
+												 "onClick='toggle_column(this,\"" + col_name + "\"," + index + ")'>" + 
+												 "<span class='select-menu-item'></span>" + 
+												 "<span class='select-menu-item'>" + col_title + "</a></span></li>")
 		}
 	}
 
@@ -65,6 +73,7 @@
 				"sLengthMenu": "_MENU_ variants per page"
 			},
 			"bDeferRender": true,
+			"fnDrawCallback": function(){update_variants(this);},
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
 			"bStateSave": true,
 			"aoColumns": loaded_cols,
@@ -75,7 +84,6 @@
 		// build the column_selector dropdown box based on all columns
 		$("#column_selector").empty()
 		$(dtable_columns).each(build_column_selector);
-		
 	}
 	/* Table initialisation */
 	var dtable;
@@ -102,195 +110,189 @@
 					    {"sTitle": "PolyPhen2 Score", "sName": "annotations.dbNSFP.P2hdiv", "isLoaded": false, "isDefault": false},
 					    ];
 
-	$(document).ready(function() {
-		build_dtable("/_variants.json?" + query_string);
-		console.log("/_variants.json?" + query_string);
-		$("div.toolbar").html(build_toolbar());
-	} );
-</script>
+	var sets = {}
+	var query_string = "{{ query_string }}"
+	var filter_string = ""
+	var group_string = ""
+	var column_string = ""
+	var grouping_state = "genotype"
+	var view_mode = ""
 
-<style>
-.filter-tag {display: inline-block; 
-			 width: 10px;
-			 height: 10px;
-			 background-color: gray;
-			 margin: 1px;}
-.GATK_filter {background-color: black;}
-.Rare_variants {background-color: blue;}
-.ORoak_denovo_2012 {background-color: orange;}
-
-</style>
-
-<script>
-var sets = {}
-var query_string = "{{ query_string }}"
-var filter_string = ""
-var group_string = ""
-var column_string = ""
-var grouping_state = "genotype"
-var view_mode = ""
-
-function toggle_grouping(grouping){
-	if (variant_grouping_enabled & grouping == "variant"){
-		dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
-		console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
-		grouping_state = "variant"
-		group_string = '&group=variant'
-		$("#genotype_pill").removeClass("active")
-		$("#variant_pill").addClass("active")
-		$($("#example thead tr th")[3]).text("# of Samples")
-	}
-	else{
-		dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
-		console.log('/_variants.json?' + query_string + '&'+ filter_string)
-		grouping_state = "genotype"
-		group_string = ''
-		$("#genotype_pill").addClass("active")
-		$("#variant_pill").removeClass("active")			
-		$($("#example thead tr th")[3]).text("Sample")
-	}
-}
-
-function toggle_view(view_mode){
-	if (view_mode == "table"){
-		$(".variant_table").show()
-		$(".geneplot_div").hide()
-	}
-	else {
-		$(".variant_table").hide()
-		$(".geneplot_div").show()
-	}
-}
-
-function create_set_label(set_item){
-	id = set_item.filter_name
-	if (set_item["filter_title"] != undefined){
-		title = set_item.filter_title
-	} else {title = set_item.filter_name}
-	prefix = set_item.prefix
-	color = set_item.color
-	return '<div class="btn-group" id='+id+'>' + 
-		   '<button class="btn btn '+color+' no-hover"><b>'+prefix + '</b>: '+title+'</button>' + 
-		   '<button class="btn btn '+color+'" onClick=\'remove_filter("'+id+'")\'>x</button></div>'
-};
-
-function build_filter_string(sets){
-	var filter_string = "include_filters="
-		for (var set in sets){
-			if (sets[set].applied){
-				filter_string += sets[set].type + ":" + sets[set].filter_name + ";";
-			}
+	function toggle_grouping(grouping){
+		if (variant_grouping_enabled & grouping == "variant"){
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
+			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
+			grouping_state = "variant"
+			group_string = '&group=variant'
+			$("#genotype_pill").removeClass("active")
+			$("#variant_pill").addClass("active")
+			$($("#example thead tr th")[3]).text("# of Samples")
 		}
-	return filter_string
-}
+		else{
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
+			console.log('/_variants.json?' + query_string + '&'+ filter_string)
+			grouping_state = "genotype"
+			group_string = ''
+			$("#genotype_pill").addClass("active")
+			$("#variant_pill").removeClass("active")			
+			$($("#example thead tr th")[3]).text("Sample")
+		}
+	}
 
-function remove_filter(item){
-	$("#"+item).remove();
-	sets[item].applied = false;
-	filter_string = build_filter_string(sets);
-	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);
-}
-
-function remove_all_filters(){
-	for (var set in sets) {
-		$("#"+sets[set].item).remove();
-		sets[set].applied = false;
-		console.log(sets[set])
-	};
-	filter_string = build_filter_string(sets);
-	reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);	
-}
-
-function add_filter(item){
-	$('#set_labels').append(create_set_label(sets[item]));
-	sets[item].applied = true;
-	sets[item].item = item
-	filter_string = build_filter_string(sets);
-	reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string);
-}
-
-function set_up_filter_modal(){
-	for (var set in sets){
-		if (sets[set].applied){
-			$("#modal_" + sets[set].item).addClass(sets[set].color);
+	function toggle_view(view_mode){
+		if (view_mode == "table"){
+			$(".variant_table").show()
+			$(".geneplot_div").hide()
 		}
 		else {
-			$("#modal_" + sets[set].item).removeClass(sets[set].color);
+			$(".variant_table").hide()
+			$(".geneplot_div").show()
 		}
 	}
-}
 
-function reload_table(url, rebuild){
-	console.log(url)
-	rebuild = typeof rebuild !== 'undefined' ? rebuild : false;
-	if (rebuild) {
-		dtable.fnDestroy();
-		$('#example').empty();
-		build_dtable(url);
-	} else {
-		dtable.fnReloadAjax(url);
+	function create_set_label(set_item){
+		id = set_item.filter_name
+		if (set_item["filter_title"] != undefined){
+			title = set_item.filter_title
+		} else {title = set_item.filter_name}
+		prefix = set_item.prefix
+		color = set_item.color
+		return '<div class="btn-group" id='+id+'>' + 
+			   '<button class="btn btn '+color+' no-hover"><b>'+prefix + '</b>: '+title+'</button>' + 
+			   '<button class="btn btn '+color+'" onClick=\'remove_filter("'+id+'")\'>x</button></div>'
+	};
+
+	function build_filter_string(sets){
+		var filter_string = "include_filters="
+			for (var set in sets){
+				if (sets[set].applied){
+					filter_string += sets[set].type + ":" + sets[set].filter_name + ";";
+				}
+			}
+		return filter_string
 	}
-}
 
-function toggle_column(item,column_name,iCol){
-	//if ($.map(dtable_columns, function (e) { return e["sName"] }).indexOf(column_name) != -1){
-	if (dtable_columns[iCol].isLoaded == true){
-		// column is already loaded, just need to toggle visilibyt
-		loaded_cols = dtable.fnSettings().aoColumns
-		loaded_iCol = $.map(loaded_cols, function (e) { return e["sName"] }).indexOf(column_name)
-		var bVis = loaded_cols[loaded_iCol].bVisible;
-		if (bVis){
-			$(item).children()[0].innerHTML= ""
-			dtable_columns[iCol].bVisible = false
+	function remove_filter(item){
+		$("#"+item).remove();
+		sets[item].applied = false;
+		filter_string = build_filter_string(sets);
+		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);
+	}
+
+	function remove_all_filters(){
+		for (var set in sets) {
+			$("#"+sets[set].item).remove();
+			sets[set].applied = false;
+			console.log(sets[set])
+		};
+		filter_string = build_filter_string(sets);
+		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);	
+	}
+
+	function add_filter(item){
+		$('#set_labels').append(create_set_label(sets[item]));
+		sets[item].applied = true;
+		sets[item].item = item
+		filter_string = build_filter_string(sets);
+		reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string);
+	}
+
+	function set_up_filter_modal(){
+		for (var set in sets){
+			if (sets[set].applied){
+				$("#modal_" + sets[set].item).addClass(sets[set].color);
+			}
+			else {
+				$("#modal_" + sets[set].item).removeClass(sets[set].color);
+			}
+		}
+	}
+
+	function reload_table(url, rebuild){
+		console.log(url)
+		rebuild = typeof rebuild !== 'undefined' ? rebuild : false;
+		if (rebuild) {
+			dtable.fnDestroy();
+			$('#example').empty();
+			build_dtable(url);
 		} else {
-			$(item).children()[0].innerHTML= '<i class="icon-ok"></i>'
-			dtable_columns[iCol].bVisible = true
+			dtable.fnReloadAjax(url);
 		}
-		dtable.fnSetColumnVis( loaded_iCol, bVis ? false : true );	
-	} else {
-		// must load column from database!
-		dtable_columns[iCol].isLoaded=true
-		dtable_columns[iCol].bVisible=true
-		column_string = "columns="
-		$(dtable_columns).each(function(index, el){
-								if (el.isDefault==false & el.isLoaded){
-									column_string += el.sName + ";"
-								}
-							   });
-		console.log(column_string)
-		var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string
-		reload_table(url, true);
 	}
-	
-}
 
-/* download the filters from server, populate the sets[] array and set up the typeahead*/
-$(document).ready(function() {
-	$.getJSON('/filters.json', function(data){
-									data = data["result"]
-									for (var i = 0; i < data.length; i++) {
-										sets[data[i].filter_name] = data[i]
+	function toggle_column(item,column_name,iCol){
+		//if ($.map(dtable_columns, function (e) { return e["sName"] }).indexOf(column_name) != -1){
+		if (dtable_columns[iCol].isLoaded == true){
+			// column is already loaded, just need to toggle visilibyt
+			loaded_cols = dtable.fnSettings().aoColumns
+			loaded_iCol = $.map(loaded_cols, function (e) { return e["sName"] }).indexOf(column_name)
+			var bVis = loaded_cols[loaded_iCol].bVisible;
+			if (bVis){
+				$(item).children()[0].innerHTML= ""
+				dtable_columns[iCol].bVisible = false
+			} else {
+				$(item).children()[0].innerHTML= '<i class="icon-ok"></i>'
+				dtable_columns[iCol].bVisible = true
+			}
+			dtable.fnSetColumnVis( loaded_iCol, bVis ? false : true );	
+		} else {
+			// must load column from database!
+			dtable_columns[iCol].isLoaded=true
+			dtable_columns[iCol].bVisible=true
+			column_string = "columns="
+			$(dtable_columns).each(function(index, el){
+									if (el.isDefault==false & el.isLoaded){
+										column_string += el.sName + ";"
 									}
-									$('#set_search').typeahead({'source': Object.keys(sets), 
-																'updater': add_filter,
-																'minLength': 0,
-															   }
-							);
-	});
-	if (query_string == ""){
-		$("#variant_group_btn").addClass("disabled")
-		$("#genotype_group_btn").addClass("active")
-		variant_grouping_enabled = false;
-		console.log("disabling group by variant")
-	} else {
-		variant_grouping_enabled = true;
+								   });
+			console.log(column_string)
+			var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string
+			reload_table(url, true);
+		}
+		
 	}
-	// set up column selector
-	$('#column_selector').click(function(event){
-    	 event.stopPropagation();
- 	});
 
-});
+	/* download the filters from server, populate the sets[] array and set up the typeahead*/
+	$(document).ready(function() {
+		$.getJSON('/filters.json', function(data){
+										data = data["result"]
+										for (var i = 0; i < data.length; i++) {
+											sets[data[i].filter_name] = data[i]
+										}
+										$('#set_search').typeahead({'source': Object.keys(sets), 
+																	'updater': add_filter,
+																	'minLength': 0,
+																   }
+								);
+		});
+		if (query_string == ""){
+			$("#variant_group_btn").addClass("disabled")
+			$("#variant_group_btn").attr("disabled", "disabled");
+			$("#genotype_group_btn").addClass("active")
+			variant_grouping_enabled = false;
+			console.log("disabling group by variant")
+		}
+		else {
+			variant_grouping_enabled = true;
+		}
+
+		if (query_string.split("=")[0] == "gene"){
+			// enable gene plot view here
+			build_geneplot(isoform);
+		} else {
+			// disable GenePlot button
+			$("#geneplot_view_btn").attr("disabled", "disabled");
+		}
+		// set up column selector
+		$('#column_selector').click(function(event){
+	    	 event.stopPropagation();
+	 	});
+
+		build_dtable("/_variants.json?" + query_string);
+		build_toolbar()
+		
+
+	});
 </script>  
 {% endblock %}
 
@@ -308,7 +310,7 @@ $(document).ready(function() {
 	  	
 	</div>
 
-	<div class="span7">
+	<div class="span9">
 		
 		<div class="btn-group">
 	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</button>
@@ -318,19 +320,20 @@ $(document).ready(function() {
 	  	</div>
 	  	
 	  	<div class="btn-group" id='grouping_toggle_buttons' data-toggle="buttons-radio">
-		  <button class="btn toolbar-btn toolbar-btn-radio active" id='genotype_group_btn' onClick='toggle_grouping("genotype"); return false;'><b>Genotypes</b></button>
-		  <button class="btn toolbar-btn toolbar-btn-radio" id='variant_group_btn' onClick='toggle_grouping("variant"); return false;'><b>Variants</b></button>
+		  <button class="btn toolbar-btn toolbar-btn-radio active" id='genotype_group_btn' onClick='toggle_grouping("genotype"); return false;'>Genotypes</button>
+		  <button class="btn toolbar-btn toolbar-btn-radio" id='variant_group_btn' onClick='toggle_grouping("variant"); return false;'>Variants</button>
 		</div>
 		<div class="btn-group" id='table_view_toggle_buttons' data-toggle="buttons-radio">
-		  <button class="btn toolbar-btn toolbar-btn-radio active" id='table_view_btn' onClick='toggle_view("table"); return false;'><b>Table</b></button>
-		  <button class="btn toolbar-btn toolbar-btn-radio" id='geneplot_view_btn' onClick='toggle_view("geneplot"); return false;'><b>GenePlot</b></button>
+		  <button class="btn toolbar-btn toolbar-btn-radio active" id='table_view_btn' onClick='toggle_view("table"); return false;'>Table</button>
+		  <button class="btn toolbar-btn toolbar-btn-radio" id='geneplot_view_btn' onClick='toggle_view("geneplot"); return false;'>GenePlot</button>
 		</div>
 
 		<div class="btn-group pull-right">
 			<button class="btn toolbar-btn dropdown-toggle pull-right" data-toggle="dropdown" onClick=''><i class="icon-file"></i> Download</button>
 			<ul class="dropdown-menu" id="save_selector">
     			<li><a class='select-menu'>As CSV</a></li>
-    			<li><a class='select-menu'>As HTML</a></li>
+    			<li><a class='select-menu'>As VCF</a></li>
+    			<li><a class='select-menu'>As HTML Report</a></li>
   			</ul>
 		</div>
 	</div>
@@ -340,9 +343,57 @@ $(document).ready(function() {
 		<table class="table table-hover table-condensed" id="example"></table>
 	</div>
 
-	<div class='geneplot_div'>
-		<div class='span12'>
-		ITS A GENE PLOT</div>
+	<div id='geneplot_div'></div>
+	
+    <script>
+    var isoform = "NM_020920.3";
+    
+    var gene_model;
+    var data;
+    var domains;
+    var eff_data = null;
+    var numberPattern = /\d+/g;
+
+    function update_variants(table){
+    	dtable_data = table.fnGetData()
+        variants_positions = []
+        for (var i=0; i < dtable_data.length; i++){
+        	p = dtable_data[i][11].match(numberPattern)
+        	if (p != null){
+    	   		variants_positions.push(p)
+    	   	}
+        }
+        if (variants_positions.length > 0){
+        	draw_variants(variants_positions);
+        }
+    }
+    function build_geneplot(isoform){
+    	gene_model = d3.select("#geneplot_div").
+                append("svg:svg").
+                attr("id","gene_model_svg").
+                attr("width", 900).
+                attr("height", 300);
+        $.getJSON("/uniprot/"+isoform+".json", function(d) {
+                   data = d;
+                   domains = []
+                   features = d["result"][0]["features"];
+                   for (var i = 0; i < features.length; i++) {
+                        if (PLOT_FEATURES.indexOf(features[i][0]) >= 0){
+                            domains.push({"start": features[i][1], 
+                                          "stop": features[i][2],
+                                          "type": features[i][0],
+                                          "name": features[i][3]
+                                        });
+                        }
+                   }
+                   aa_length = d["result"][0]["sequence_length"]
+                   console.log(aa_length)
+                   draw_model(gene_model, domains, aa_length);
+                });
+    };  
+
+
+    </script>
 	</div>
 
 
