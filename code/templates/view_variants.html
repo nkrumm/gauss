@@ -43,6 +43,15 @@
 		$("div.toolbar").html('<div id="set_labels" class="span10"></div>');
 	}
 
+	function build_alerts(){
+		console.log(alerts)
+		html = ""
+		for (i = 0; i < alerts.length; i++){
+			html += alerts[i]
+		}
+		$("#alerts").html(html)
+	}
+
 	function build_column_selector(index, element){
 		// create <li> elements for all the columns
 		col_name = element["sName"]
@@ -70,10 +79,21 @@
 			"sDom": "<'row-fluid'<'test'>r>t<'row-fluid'<'span4'i><'span4'l><'span4'p>>",
 			"sPaginationType": "bootstrap",
 			"oLanguage": {
-				"sLengthMenu": "_MENU_ variants per page"
+				"sLengthMenu": "_MENU_ variants per page",
 			},
+			"fnInfoCallback": function( oSettings, iStart, iEnd, iMax, iTotal, sPre ) {
+					        if (iTotal < 1000) {
+					            return "Showing "+iStart+"-"+iEnd+" of "+iTotal+" total rows";
+					        }
+					        else {
+					            alerts.push("<div class='alert alert-error'>Not all rows are loaded, some variants are hidden! Please use additional filters or set a higher query limit.</div>")
+					            return "Showing "+iStart+"-"+iEnd+
+					            " of <span style='color: red; font-weight: bold;'>"+iTotal+"+ rows</span>";
+
+					        }},
 			"bDeferRender": true,
-			"fnDrawCallback": function(){update_variants(this);},
+			//"fnDrawCallback": function(){update_variants(this);},
+			"fnDrawCallback": function(){build_alerts();},
 			"aaSorting": [ [0,'asc'], [1,'asc'] ],
 			"bStateSave": true,
 			"aoColumns": loaded_cols,
@@ -116,12 +136,14 @@
 	var group_string = ""
 	var column_string = ""
 	var grouping_state = "genotype"
+	var limit_string = "limit=2000"
 	var view_mode = ""
+	var alerts = []
 
 	function toggle_grouping(grouping){
 		if (variant_grouping_enabled & grouping == "variant"){
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant');
-			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant')
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant'+ '&'+ limit_string);
+			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant'+ '&'+ limit_string)
 			grouping_state = "variant"
 			group_string = '&group=variant'
 			$("#genotype_pill").removeClass("active")
@@ -129,8 +151,8 @@
 			$($("#example thead tr th")[3]).text("# of Samples")
 		}
 		else{
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string);
-			console.log('/_variants.json?' + query_string + '&'+ filter_string)
+			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string);
+			console.log('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string)
 			grouping_state = "genotype"
 			group_string = ''
 			$("#genotype_pill").addClass("active")
@@ -176,7 +198,7 @@
 		$("#"+item).remove();
 		sets[item].applied = false;
 		filter_string = build_filter_string(sets);
-		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);
+		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string+ '&'+ limit_string);
 	}
 
 	function remove_all_filters(){
@@ -186,7 +208,7 @@
 			console.log(sets[set])
 		};
 		filter_string = build_filter_string(sets);
-		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string);	
+		reload_table( '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string  + '&'+ column_string+ '&'+ limit_string);	
 	}
 
 	function add_filter(item){
@@ -194,7 +216,7 @@
 		sets[item].applied = true;
 		sets[item].item = item
 		filter_string = build_filter_string(sets);
-		reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string);
+		reload_table('/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string+ '&'+ limit_string);
 	}
 
 	function set_up_filter_modal(){
@@ -246,7 +268,7 @@
 									}
 								   });
 			console.log(column_string)
-			var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string
+			var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string + '&' + limit_string
 			reload_table(url, true);
 		}
 		
@@ -288,8 +310,9 @@
 	    	 event.stopPropagation();
 	 	});
 
-		build_dtable("/_variants.json?" + query_string);
-		build_toolbar()
+		build_dtable("/_variants.json?" + query_string + '&'+ limit_string);
+		build_toolbar();
+		build_alerts();
 		
 
 	});
@@ -339,6 +362,7 @@
 	</div>
 	</div>
 	<div class='toolbar'></div>
+	<div id='alerts' class='span12' style='margin-left: 0px; margin-top: 5px; margin-bottom:5px'></div>
 	<div class='variant_table'>
 		<table class="table table-hover table-condensed" id="example"></table>
 	</div>
