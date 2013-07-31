@@ -141,12 +141,6 @@ class GaussQuery(object):
         else:
             raise QueryException("Invalid grouping field %s in run_query!" % self.group_field)
 
-    def describe_query(self):
-        """
-        Returns information about keys used and estimated # of rows etc
-        """
-        pass
-
     def get_results(self, format):
         """
         Return formatted results from query
