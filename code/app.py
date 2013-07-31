@@ -5,6 +5,7 @@ import os
 from collections import defaultdict
 from managers import db_conn, study_manager, sample_manager, variant_manager, filter_manager, uniprot_manager
 import annotation
+from query import GaussQuery
 from bson import json_util
 from constants import VARIANT_EFFECTS, VARIANT_RANKS, VARIANT_SHORTNAMES
 import numpy as np
@@ -219,252 +220,62 @@ def is_arg(argname):
     """
     return (argname in request.args) and (len(request.args[argname]) > 0)
 
+
 @app.route('/_variants.json', methods=['GET'])
-def json_variants(return_query=False):
-    """
-    Parses set of query arguments and retrieves records
-    from mongodb. Re-formats some data fields and jenkily adds
-    some HTML formatting to some of them. Returns a json object
-    which is passed to the javascript datatable on the view_variants
-    page. Also creates an appropriate title for the view_variants page.
+def _variants():
+    query = GaussQuery(db="test", conn=g.conn)
 
-    This function:
-        - Make basic determination if query is:
-            + for a specific sample
-            + for a specific gene
-            + for a range of chromosome:start-stop
-        - includes/excludes columns based on the `columns` parameter and
-            parses this list to handle dot notation (annotations.EFF...)
-        - Sets a maximum limit of returned rows
-        - parses the include_filters and exclude_filters lists
-        - sets up the mongodb groupby clause if this is requested
-        - Lastly, iterates across the returned raw database records
-            and reformats into a flat n x m table, adding HTML fields 
-            for formatting etc.
-
-    Todo: 
-        - split apart into its own class/API
-        - HTML formatting should not be added here... 
-            (unless clearly asked for in the request)
-        - Better handling of limits/skipby requests
-        - Improve the custom columns parsing (unreadable code right now)
-        - Integrate output options for CSV etc.
-
-    """
-    query = defaultdict(lambda: defaultdict(list))
-
-    var_mgr = variant_manager(db="test",conn=g.conn)
-    # INITIAL DATA
     if is_arg("sample_id"):
         sample_mgr = sample_manager(db="test", conn=g.conn)
         sample_id = sample_mgr.get_sample(request.args["sample_id"])["_id"]
-        query["sample_id"] = sample_id
+        query.add("sample_id", sample_id)
         title = "%s (All Variants)" % request.args["sample_id"]
 
     if is_arg("gene"):
-        query["annotations.EFF.g"] = request.args["gene"]
+        query.add("annotations.EFF.g", request.args["gene"])
         title = "<em>%s</em> (All Variants)" % request.args["gene"]
 
+    if is_arg("isoform"):
+        query.add("annotations.EFF.tx", request.args["isoform"])
+        title = "<em>%s</em> (All Variants)" % request.args["isoform"]
+
     if is_arg("chrom") and is_arg("start") and is_arg("end"):
-        chrom = request.args["chrom"].lower().replace("chr","")
-        #chrom = request.args["chrom"]
+        chrom = request.args["chrom"].lower().replace("chr", "")
         start = int(request.args["start"])
         end = int(request.args["end"])
-        query["chrom"] = chrom
-        query["start"] = {'$gte': start, '$lte': end}
-        title="%s: %d - %d" % (chrom, start, end)
+        query.add("chrom", chrom)
+        query.add("start", {'$gte': start, '$lte': end})
+        title = "%s: %d - %d" % (chrom, start, end)
 
     if is_arg("limit"):
-        limit = int(request.args["limit"])
-    else:
-        limit = 1000
+        query.set_limit(request.args["limit"])
 
-    default_column_list = ["chrom","start","end","sample_name","id","ref","alt"]
-    projection = {"sample_name": True, 
-                  "id":True,
-                  "ref": True,
-                  "alt": True,
-                  "chrom":True,
-                  "start":True,
-                  "filter": True,
-                  "annotations.EFF":True}
-    
-    custom_column_list = []
+    if is_arg("skip"):
+        query.set_skip(request.args["skip"])
+
     if is_arg("columns"):
         for c in request.args["columns"].rstrip(";").split(";"):
-            c = c.split(".")
-            if len(c) == 1:
-                custom_column_list.append(c)
-                projection[c[0]] = True
-            elif (c[0] == "annotations") and (c[1] == "EFF"):
-                custom_column_list.append(c)
-            elif (c[0] == "annotations") and (c[1] == "dbNSFP"):
-                custom_column_list.append(c)
-                projection["annotations.dbNSFP." +c[2]] = True
-            else:
-                pass
+            query.add_column(c)
 
-    # FILTERS
-    if ("exclude_filters" in request.args) and len(request.args["exclude_filters"]) > 0:
-        query["filter"]["$nin"] = request.args["exclude_filters"].split(";")
-    if ("include_filters" in request.args)  and len(request.args["include_filters"]) > 0:
+    if is_arg("exclude_filters"):
+        for f in request.args["exclude_filters"].split(";"):
+            query.add_exclude_filter(f)
+
+    if is_arg("include_filters"):
         for f in request.args["include_filters"].strip(";").split(";"):
-            filter_type, filter_id = f.split(":")
-            filter_mgr = filter_manager(db="test",conn=g.conn)
-            filter_obj = filter_mgr.get_filter(filter_id)[0]
-            if filter_type == "set":
-                query["filter"]["$in"].append(filter_id)
-            elif "query_repr" in filter_obj:
-                qr = filter_obj["query_repr"]
-                for i in qr:
-                    field = i["field"]
-                    op = i["op"]
-                    value = i["value"]
-                    query[field][op] = value
-            elif filter_type == "attr":
-                if filter_id == "truncating":
-                    query["annotations.EFF.e"]["$in"]=["FRAME_SHIFT", "STOP_GAINED"]
-                elif filter_id == "autosomal":
-                    query["chrom"]["$nin"]=["X","Y"]
-                elif filter_id == "sex_chrs":
-                    query["chrom"]["$in"]=["X","Y"]
-                elif filter_id == "dbSNP":
-                    query["id"] = None
-                elif filter_id == "genic":
-                    if not is_arg("gene"):  # only do this if not already a gene query
-                        query["annotations.EFF.g"]["$ne"]=None
-                elif filter_id == "exonic":
-                    if not is_arg("gene"):  # only do this if not already a gene query
-                        query["annotations.EFF.g"]["$ne"]=None
-                    query["annotations.EFF.e"]["$nin"] = ["INTRON","UTR-5","UTR-3","INTRAGENIC","UTR_3_PRIME","UTR_5_PRIME"]
-                elif filter_id == "GATK_filter":
-                    query["filter"]["$nin"].append(filter_id)
+            query.add_include_filter(f)
 
+    if is_arg("group"):
+        query.set_grouping(request.args["group"])
 
-    
-    if is_arg("group") and (request.args["group"] == "variant"):
-        grouped = True
-        data = var_mgr.documents.aggregate([{"$match": query},
-                                      
-                                      {"$group": {"_id":{"chrom":"$chrom",
-                                                      "start":"$start",
-                                                      "end":"$end",
-                                                      "id":"$id",
-                                                      "ref":"$ref",
-                                                      "alt":"$alt",
-                                                      },
-                                               "count": { "$sum": 1},
-                                               "annotations_list": {"$addToSet":"$annotations.EFF"},
-                                               "sample_name_list": {"$addToSet":"$sample_name"},
-                                               "filter":  {"$addToSet":"$filter"},
-                                               }},
-                                      {"$project":{
-                                            "_id": {"$add": [0]}, # this is a stupid hack to put a literal/static field in
-                                            "chrom": "$_id.chrom",
-                                            "start": "$_id.start",
-                                            "end": "$_id.end",
-                                            "ref": "$_id.ref",
-                                            "alt": "$_id.alt",
-                                            "id": "$_id.id",
-                                            "count": "$count",
-                                            "annotations": "$annotations_list",
-                                            "sample_name":"$sample_name_list",
-                                            "filter": "$filter"
+    query.execute()
 
-                                      }},
-                                      {"$sort": {"chrom": 1, "start": 1}}
-
-                                      ])
-        #return jsonify(data)
-        data = data["result"]
-
-
-    else:
-        grouped = False
-
-        print query
-        if len(query) == 0:
-            #query = {"_id":{"$ne":""}}
-            query = {}
-            data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit)
-        else:
-            data = g.conn["test"].variants.find(spec=query,fields=projection).skip(0).limit(limit).sort([("chrom", 1), ("start", 1)])
-
-    out = {}
-    out["aaData"] = []
-
-    for row in data:
-        if grouped:
-            row["annotations"] = {"EFF":row["annotations"][0]}
-            row["filter"] = row["filter"][0]
-            row["sample_name"] = int(row["count"]) #", ".join(row["sample_name"])
-
-        row_data = [row.get(c,'') for c in default_column_list]
-        row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
-        highest_rank = 0
-        effect_str = ""
-        gene_str = ""
-        
-        for eff in row["annotations"].get("EFF",[]):
-            eff_code = eff.get("e", None)
-            eff_type = VARIANT_EFFECTS[eff_code]
-            eff_rank = VARIANT_RANKS[eff_type]
-            if eff_rank > highest_rank:
-                eff_gene = eff.get("g", None)
-                if (eff_type in ["high", "moderate", "low"]) and (eff_gene is not None):
-                    gene_str = eff_gene
-                    effect_str = "<span class='label impact-tag %s'>%s</span>" % (eff_type, VARIANT_SHORTNAMES[eff_code])
-        
-        row_data.append(gene_str)
-        if grouped:
-            if row["end"] is not None:
-                pos_str = '%s:%d-%d' % (row["chrom"], row["start"], row["end"])
-            else:
-                pos_str = '%s:%d' % (row["chrom"], row["start"])
-            row_data.append("<a href='/variants/id:%s'>%s</a>" % (pos_str, effect_str))
-            row_data.append("<a href='/variants/id:%s'>id</a>" % (pos_str))
-        else:
-            row_data.append("<a href='/genotypes/id:%s'>%s</a>" % (row["_id"], effect_str))
-            row_data.append("<a href='/genotypes/id:%s'>id</a>" % row["_id"])
-        
-        if len(custom_column_list) > 0:
-            for c in custom_column_list:
-                if len(c) == 1:
-                    row_data.append(row.get(c[0],''))
-                else:
-                    if c[1] == "EFF":
-                        try:
-                            val = row[c[0]][c[1]][0].get(c[2], '')
-                            row_data.append(val)
-                        except KeyError:
-                            row_data.append('')
-                    elif c[1] == "dbNSFP":
-                        try:
-                            val =row[c[0]][c[1]].get(c[2],'')
-                            row_data.append(val)
-                        except KeyError:
-                            row_data.append('')
-
-        out["aaData"].append(row_data)
-    
-    
-    if return_query:
-        return json_util.dumps(query)
-    else:
-        return jsonify(out)
-
-@app.route('/_variants_query.json', methods=['GET'])
-def variant_query_test():
-    """
-    This only returns the mongodb query that would be used
-    to get a list of variants. Testing/debug only.
-    """
-    return json_variants(return_query=True)
+    return query.get_results(format="datatables")
 
 
 def allowed_file(filename):
     """
-    Used in uploading files for custom gene/variant sets. 
+    Used in uploading files for custom gene/variant sets.
     Tests if file extension is part of global ALLOWED_EXTENSIONS.
     """
     return '.' in filename and \
