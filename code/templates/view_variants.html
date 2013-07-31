@@ -82,6 +82,7 @@
 				"sLengthMenu": "_MENU_ variants per page",
 			},
 			"fnInfoCallback": function( oSettings, iStart, iEnd, iMax, iTotal, sPre ) {
+							alerts = []
 					        if (iTotal < 1000) {
 					            return "Showing "+iStart+"-"+iEnd+" of "+iTotal+" total rows";
 					        }
