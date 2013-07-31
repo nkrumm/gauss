@@ -229,15 +229,12 @@ def _variants():
         sample_mgr = sample_manager(db="test", conn=g.conn)
         sample_id = sample_mgr.get_sample(request.args["sample_id"])["_id"]
         query.add("sample_id", sample_id)
-        title = "%s (All Variants)" % request.args["sample_id"]
 
     if is_arg("gene"):
         query.add("annotations.EFF.g", request.args["gene"])
-        title = "<em>%s</em> (All Variants)" % request.args["gene"]
 
     if is_arg("isoform"):
         query.add("annotations.EFF.tx", request.args["isoform"])
-        title = "<em>%s</em> (All Variants)" % request.args["isoform"]
 
     if is_arg("chrom") and is_arg("start") and is_arg("end"):
         chrom = request.args["chrom"].lower().replace("chr", "")
@@ -245,7 +242,6 @@ def _variants():
         end = int(request.args["end"])
         query.add("chrom", chrom)
         query.add("start", {'$gte': start, '$lte': end})
-        title = "%s: %d - %d" % (chrom, start, end)
 
     if is_arg("limit"):
         query.set_limit(request.args["limit"])
