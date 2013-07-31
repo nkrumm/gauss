@@ -166,6 +166,7 @@ class GaussQuery(object):
 
             row_data = [row.get(c, '') for c in self.column_list]
             row_data.append("".join(["<div class='filter-tag %s'></div>" % f for f in row["filter"]]))
+                
             highest_rank = 0
             effect_str = ""
             gene_str = ""

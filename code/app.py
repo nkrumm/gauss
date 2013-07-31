@@ -190,7 +190,6 @@ def get_variants(gene=None, sample_id=None, chrom=None, start=None, end=None):
     Flask function for variants endpoint. Sets up basic query string
     which is passed in to the javascript datatables AJAX call.
     """
-    var_mgr = variant_manager(db="test",conn=g.conn)
     isoform = None
     if sample_id is not None:
         title = "%s" % sample_id
