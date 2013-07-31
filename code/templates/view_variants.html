@@ -38,18 +38,29 @@
 	</style>
 
 <script>
-	
+	function getURLParameter(name) {
+	    return decodeURI(
+	        (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
+	    );
+	}
+
 	function build_toolbar(){
 		$("div.toolbar").html('<div id="set_labels" class="span10"></div>');
 	}
 
 	function build_alerts(){
 		console.log(alerts)
-		html = ""
-		for (i = 0; i < alerts.length; i++){
-			html += alerts[i]
+		if (alerts.length > 0){
+			html = ""
+			for (i = 0; i < alerts.length; i++){
+				html += alerts[i]
+			}
+			$("#alerts").html(html)
+			$("#alerts").addClass("span12")
+		} else {
+			$("#alerts").removeClass("span12")
+			$("#alerts").html("")
 		}
-		$("#alerts").html(html)
 	}
 
 	function build_column_selector(index, element){
@@ -83,11 +94,11 @@
 			},
 			"fnInfoCallback": function( oSettings, iStart, iEnd, iMax, iTotal, sPre ) {
 							alerts = []
-					        if (iTotal < 1000) {
+					        if (iTotal < query_limit) {
 					            return "Showing "+iStart+"-"+iEnd+" of "+iTotal+" total rows";
 					        }
 					        else {
-					            alerts.push("<div class='alert alert-error'>Not all rows are loaded, some variants are hidden! Please use additional filters or set a higher query limit.</div>")
+					            alerts.push("<div class='alert alert-error'>Not all rows are loaded, some variants are hidden! Please use additional filters or <a href='#optionsModal' data-toggle='modal'>set a higher query limit</a>.</div>")
 					            return "Showing "+iStart+"-"+iEnd+
 					            " of <span style='color: red; font-weight: bold;'>"+iTotal+"+ rows</span>";
 
@@ -137,7 +148,12 @@
 	var group_string = ""
 	var column_string = ""
 	var grouping_state = "genotype"
-	var limit_string = "limit=2000"
+	if (getURLParameter("limit") > 0){
+		var query_limit = getURLParameter("limit")
+	} else{
+		var query_limit = 1000
+	}
+	var limit_string = "limit=" + query_limit
 	var view_mode = ""
 	var alerts = []
 
@@ -275,6 +291,17 @@
 		
 	}
 
+	function set_query_limit(form_element){
+		limit = parseInt(form_element.value)
+		if (typeof limit === 'number'){
+			query_limit = limit	
+			limit_string = "limit=" + limit
+			var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string + '&' + limit_string
+			reload_table(url, true)
+		}
+
+	}
+
 	/* download the filters from server, populate the sets[] array and set up the typeahead*/
 	$(document).ready(function() {
 		$.getJSON('/filters.json', function(data){
@@ -313,7 +340,8 @@
 
 		build_dtable("/_variants.json?" + query_string + '&'+ limit_string);
 		build_toolbar();
-		build_alerts();
+		//build_alerts();
+		$("#query_limit").val(query_limit)
 		
 
 	});
@@ -335,7 +363,7 @@
 	</div>
 
 	<div class="span9">
-		
+		<!-- THE TOOLBAR -->
 		<div class="btn-group">
 	  		<button class="btn toolbar-btn dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> Columns</button>
   			<ul class="dropdown-menu" id="column_selector">
@@ -352,6 +380,10 @@
 		  <button class="btn toolbar-btn toolbar-btn-radio" id='geneplot_view_btn' onClick='toggle_view("geneplot"); return false;'>GenePlot</button>
 		</div>
 
+		<div class="btn-group">
+			<button href='#optionsModal' class="btn toolbar-btn" data-toggle="modal">Options...</button>
+		</div>
+		
 		<div class="btn-group pull-right">
 			<button class="btn toolbar-btn dropdown-toggle pull-right" data-toggle="dropdown" onClick=''><i class="icon-file"></i> Download</button>
 			<ul class="dropdown-menu" id="save_selector">
@@ -362,8 +394,7 @@
 		</div>
 	</div>
 	</div>
-	<div class='toolbar'></div>
-	<div id='alerts' class='span12' style='margin-left: 0px; margin-top: 5px; margin-bottom:5px'></div>
+	<div class='toolbar'></div><div id='alerts' class='span12' style='margin: 0px; min-height:15px; margin-top: 5px'></div><!--  margin-top: 5px; margin-bottom:5px'-->
 	<div class='variant_table'>
 		<table class="table table-hover table-condensed" id="example"></table>
 	</div>
@@ -453,6 +484,28 @@
 	    	<button class="btn" data-dismiss="modal" aria-hidden="true" onClick="console.log('cancel'); remove_all_filters()">Cancel</button>
 	    	<button class="btn btn-primary" data-dismiss="modal">Done</button>
 	    </div>
-</div>
+	</div>
+
+	<!--options modal -->
+	<div id="optionsModal" class="modal hide" style="margin: 120px 0 0 -280px;" tabindex="-1" data-backdrop="0" role="dialog" aria-labelledby="optionsModal" aria-hidden="true">
+  		<div class="modal-header">
+    		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    		<h3 id="myModalLabel">Options:</h3>
+  		</div>
+  	    <div class="modal-body">
+    		<form id='options_form' class="form-horizontal">
+			<div class="control-group">
+				<label class="control-label" for="query_limit"><b>Query Limit</b></label>
+				<div class="controls">
+    				<input id='query_limit' name='limit' type='text' onChange="set_query_limit(this)" />
+    			</div>
+			</div>
+			</form>
+    		
+	    </div>
+	    <div class="modal-footer">
+	    	<button class="btn btn-primary" data-dismiss="modal">Done</button>
+	    </div>
+	</div>
 
 {% endblock %}
