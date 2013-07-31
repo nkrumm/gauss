@@ -278,7 +278,7 @@
 
 		if (query_string.split("=")[0] == "gene"){
 			// enable gene plot view here
-			build_geneplot(isoform);
+			//build_geneplot(isoform);
 		} else {
 			// disable GenePlot button
 			$("#geneplot_view_btn").attr("disabled", "disabled");
@@ -355,17 +355,19 @@
     var numberPattern = /\d+/g;
 
     function update_variants(table){
-    	dtable_data = table.fnGetData()
-        variants_positions = []
-        for (var i=0; i < dtable_data.length; i++){
-        	p = dtable_data[i][11].match(numberPattern)
-        	if (p != null){
-    	   		variants_positions.push(p)
-    	   	}
-        }
-        if (variants_positions.length > 0){
-        	draw_variants(variants_positions);
-        }
+    	if (gene_model != null){
+	    	dtable_data = table.fnGetData()
+	        variants_positions = []
+	        for (var i=0; i < dtable_data.length; i++){
+	        	p = dtable_data[i][11].match(numberPattern)
+	        	if (p != null){
+	    	   		variants_positions.push(p)
+	    	   	}
+	        }
+	        if (variants_positions.length > 0){
+	        	draw_variants(variants_positions);
+	        }
+	      }
     }
     function build_geneplot(isoform){
     	gene_model = d3.select("#geneplot_div").
