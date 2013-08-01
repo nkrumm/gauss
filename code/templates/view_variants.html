@@ -17,24 +17,24 @@
 	<link href="/static/gene_model.css" rel="stylesheet" media="screen">
 	<style>
 
-	.toolbar-pills .active a,
-	.toolbar-pills .active a:hover {background-color: #888888;}
-	.toolbar-btn {height: 40px !important}
-	.toolbar-btn-radio{
-		font-weight: bold;
-	}
-	.select-menu-item {
-		display: table-cell;
-		padding-right: 8px;
-		width: 14px !important;
-	}
-	.select-menu {
-		padding-left: 8px !important;
+		.toolbar-pills .active a,
+		.toolbar-pills .active a:hover {background-color: #888888;}
+		.toolbar-btn {height: 40px !important}
+		.toolbar-btn-radio{
+			font-weight: bold;
+		}
+		.select-menu-item {
+			display: table-cell;
+			padding-right: 8px;
+			width: 14px !important;
+		}
+		.select-menu {
+			padding-left: 8px !important;
 
-	}
-	.variant_table {
-		padding-top: 20px;
-	}
+		}
+		.variant_table {
+			padding-top: 20px;
+		}
 	</style>
 
 <script>
@@ -142,12 +142,39 @@
 					    {"sTitle": "PolyPhen2 Score", "sName": "annotations.dbNSFP.P2hdiv", "isLoaded": false, "isDefault": false},
 					    ];
 
-	var sets = {}
-	var query_string = "{{ query_string }}"
 	var filter_string = ""
-	var group_string = ""
+	var sets = {}
+	var url_sets = []
+	if (getURLParameter("include_filters") !== "null"){
+		f = getURLParameter("include_filters").split(";")
+		for (i in f){
+			url_sets.push(f[i].split(":")[1])
+		}
+	}
+	
+	var query_string = ""
+	if (getURLParameter("sample_id") !== "null"){
+		query_string = "&sample_id=" + getURLParameter("sample_id")
+	} else if (getURLParameter("gene") !== "null"){
+		query_string = "&gene=" + getURLParameter("gene")
+	} else if (getURLParameter("chrom") !== "null"){
+		query_string = "&chrom=" + getURLParameter("chrom")	+
+					   "&start=" + getURLParameter("start")	+
+					   "&end=" + getURLParameter("end")
+	} else{
+		query_string = "{{ query_string }}"
+	}
+	
 	var column_string = ""
-	var grouping_state = "genotype"
+
+	if (getURLParameter("group") !== "null"){
+		var grouping_state = getURLParameter("group")
+		var group_string = "&group=" + grouping_state
+	} else{
+		var grouping_state = "genotype"
+		var group_string = ""
+	}
+
 	if (getURLParameter("limit") > 0){
 		var query_limit = getURLParameter("limit")
 	} else{
@@ -159,21 +186,23 @@
 
 	function toggle_grouping(grouping){
 		if (variant_grouping_enabled & grouping == "variant"){
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant'+ '&'+ limit_string);
+			//dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant'+ '&'+ limit_string);
+			reload_table('/_variants.json?' + query_string + '&'+ filter_string + '&group=variant'+ '&'+ limit_string);
 			console.log('/_variants.json?' + query_string + '&'+  filter_string +  '&group=variant'+ '&'+ limit_string)
 			grouping_state = "variant"
 			group_string = '&group=variant'
-			$("#genotype_pill").removeClass("active")
-			$("#variant_pill").addClass("active")
+			//$("#genotype_pill").removeClass("active")
+			//$("#variant_pill").addClass("active")
 			$($("#example thead tr th")[3]).text("# of Samples")
 		}
 		else{
-			dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string);
+			//dtable.fnReloadAjax('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string);
+			reload_table('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string);
 			console.log('/_variants.json?' + query_string + '&'+ filter_string+ '&'+ limit_string)
 			grouping_state = "genotype"
 			group_string = ''
-			$("#genotype_pill").addClass("active")
-			$("#variant_pill").removeClass("active")			
+			//$("#genotype_pill").addClass("active")
+			//$("#variant_pill").removeClass("active")			
 			$($("#example thead tr th")[3]).text("Sample")
 		}
 	}
@@ -249,6 +278,8 @@
 
 	function reload_table(url, rebuild){
 		console.log(url)
+
+		
 		rebuild = typeof rebuild !== 'undefined' ? rebuild : false;
 		if (rebuild) {
 			dtable.fnDestroy();
@@ -257,6 +288,10 @@
 		} else {
 			dtable.fnReloadAjax(url);
 		}
+		base_url = window.location.href.split("?")[0]
+
+		history_url = base_url + "?" + url.slice(16)
+		window.history.pushState({}, "", history_url);
 	}
 
 	function toggle_column(item,column_name,iCol){
@@ -291,8 +326,9 @@
 		
 	}
 
-	function set_query_limit(form_element){
-		limit = parseInt(form_element.value)
+	function set_query_limit(){
+		
+		limit = parseInt($("#query_limit").val())
 		if (typeof limit === 'number'){
 			query_limit = limit	
 			limit_string = "limit=" + limit
@@ -307,7 +343,13 @@
 		$.getJSON('/filters.json', function(data){
 										data = data["result"]
 										for (var i = 0; i < data.length; i++) {
+
 											sets[data[i].filter_name] = data[i]
+											if (url_sets.indexOf(data[i].filter_name) >= 0){
+												add_filter(data[i].filter_name)
+												sets[data[i].filter_name].applied = true
+											}
+											
 										}
 										$('#set_search').typeahead({'source': Object.keys(sets), 
 																	'updater': add_filter,
@@ -324,6 +366,17 @@
 		}
 		else {
 			variant_grouping_enabled = true;
+			console.log(grouping_state)
+			if (grouping_state=="variant"){
+				console.log("test")
+				$("#genotype_group_btn").removeClass("active");
+				$("#variant_group_btn").addClass("active");
+				$($("#example thead tr th")[3]).text("# of Samples");
+			} else {
+				$("#genotype_group_btn").addClass("active");
+				$("#variant_group_btn").removeClass("active");
+				$($("#example thead tr th")[3]).text("Sample");
+			}
 		}
 
 		if (query_string.split("=")[0] == "gene"){
@@ -338,7 +391,9 @@
 	    	 event.stopPropagation();
 	 	});
 
-		build_dtable("/_variants.json?" + query_string + '&'+ limit_string);
+		var url = '/_variants.json?' + query_string + "&" + filter_string + '&'+ group_string + '&'+ column_string + '&' + limit_string
+		console.log(url)
+		build_dtable(url);
 		build_toolbar();
 		//build_alerts();
 		$("#query_limit").val(query_limit)
@@ -493,18 +548,18 @@
     		<h3 id="myModalLabel">Options:</h3>
   		</div>
   	    <div class="modal-body">
-    		<form id='options_form' class="form-horizontal">
+    		<form id='options_form' action="javascript:set_query_limit(); $('#optionsModal').toggle(); return false" class="form-horizontal">
 			<div class="control-group">
 				<label class="control-label" for="query_limit"><b>Query Limit</b></label>
 				<div class="controls">
-    				<input id='query_limit' name='limit' type='text' onChange="set_query_limit(this)" />
+    				<input id='query_limit' type='text'/>
     			</div>
 			</div>
 			</form>
     		
 	    </div>
 	    <div class="modal-footer">
-	    	<button class="btn btn-primary" data-dismiss="modal">Done</button>
+	    	<button class="btn btn-primary" data-dismiss="modal" onClick='set_query_limit()'>Done</button>
 	    </div>
 	</div>
 
