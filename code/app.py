@@ -12,8 +12,9 @@ import numpy as np
 import redis
 from werkzeug import secure_filename
 
+import settings
 
-UPLOAD_FOLDER = '/Volumes/achiever_vol2/UPLOADS/'
+UPLOAD_FOLDER = settings.UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = set(['vcf', 'variant', 'txt', 'bed'])
 
 app = Flask(__name__)
