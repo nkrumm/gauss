@@ -129,7 +129,7 @@
 						{"sTitle":"Filters/Sets","bSearchable": true, "sWidth":"10%","sName":"filters", "isLoaded": true, "bVisible": true},
 						{"sTitle":"Gene","bSearchable": true, "sWidth":"10%","sName":"gene", "isLoaded": true, "bVisible": true},
 						{"sTitle":"Effect","bSearchable": true, "sWidth":"15%","sName":"effect", "isLoaded": true, "bVisible": true},
-						{"sTitle":"id","bSearchable": false,"sName":"id", "isLoaded": true, "bVisible": true},
+						//{"sTitle":"id","bSearchable": false,"sName":"id", "isLoaded": true, "bVisible": true},
 						{"sTitle": "VCF:data", "sName": "data", "isLoaded": false, "isDefault": false},
 					    {"sTitle": "VCF:qual", "sName": "qual", "isLoaded": false, "isDefault": false},
 					    {"sTitle": "AA Change", "sName": "annotations.EFF.aa", "isLoaded": false, "isDefault": false},
@@ -395,6 +395,8 @@
 		console.log(url)
 		build_dtable(url);
 		build_toolbar();
+		// set up rowlink
+		$('#example').rowlink()
 		//build_alerts();
 		$("#query_limit").val(query_limit)
 		
@@ -451,7 +453,7 @@
 	</div>
 	<div class='toolbar'></div><div id='alerts' class='span12' style='margin: 0px; min-height:15px; margin-top: 5px'></div><!--  margin-top: 5px; margin-bottom:5px'-->
 	<div class='variant_table'>
-		<table class="table table-hover table-condensed" id="example"></table>
+		<table class="table table-hover table-condensed rowlink" id="example"></table>
 	</div>
 
 	<div id='geneplot_div'></div>

@@ -188,10 +188,10 @@ class GaussQuery(object):
                 else:
                     pos_str = '%s:%d' % (row["chrom"], row["start"])
                 row_data.append("<a href='/variants/id:%s'>%s</a>" % (pos_str, effect_str))
-                row_data.append("<a href='/variants/id:%s'>id</a>" % (pos_str))
+                #row_data.append("<a href='/variants/id:%s'>id</a>" % (pos_str))
             else:
                 row_data.append("<a href='/genotypes/id:%s'>%s</a>" % (row["_id"], effect_str))
-                row_data.append("<a href='/genotypes/id:%s'>id</a>" % row["_id"])
+                #row_data.append("<a href='/genotypes/id:%s'>id</a>" % row["_id"])
 
             for c in self.custom_column_list:
                 if len(c) == 1:
