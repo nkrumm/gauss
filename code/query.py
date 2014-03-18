@@ -105,7 +105,7 @@ class GaussQuery(object):
                                     {"chrom": "$chrom",
                                      "start": "$start",
                                      "end": "$end",
-                                     "id": "$id",
+                                     #"id": "$id",
                                      "ref": "$ref",
                                      "alt": "$alt",
                                      },
@@ -116,7 +116,9 @@ class GaussQuery(object):
                                  "sample_name_list":
                                     {"$addToSet": "$sample_name"},
                                  "filter":
-                                    {"$addToSet": "$filter"}
+                                    {"$addToSet": "$filter"},
+                                 "id_list":
+                                    {"$addToSet": "$id"}
                                 }
                             })
 
@@ -128,7 +130,7 @@ class GaussQuery(object):
                                  "end": "$_id.end",
                                  "ref": "$_id.ref",
                                  "alt": "$_id.alt",
-                                 "id": "$_id.id",
+                                 "id": "$id_list",
                                  "count": "$count",
                                  "annotations": "$annotations_list",
                                  "sample_name": "$sample_name_list",
