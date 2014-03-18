@@ -383,6 +383,7 @@ def uniprot_record(refseq_accession):
     return jsonify(result=[i for i in data])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
-    #http_server = WSGIServer(('', 5000), app)
-    #http_server.serve_forever()
+    #app.run(host='0.0.0.0', debug=True)
+    import gevent.pywsgi
+    http_server = gevent.pywsgi.WSGIServer(('', 5000), app)
+    http_server.serve_forever()
