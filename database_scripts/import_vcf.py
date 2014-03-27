@@ -4,7 +4,7 @@ import pprint
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../code/")
 from managers import *
-import pandas
+import pandas as pd
 from cStringIO import StringIO
 from bson.objectid import ObjectId
 import datetime
@@ -88,10 +88,9 @@ def read_vcf(vcf_filename, columns=None):
     with open(vcf_filename) as f:
         for line in f:
             if line.startswith('#'):
-          if line.startswith('#'):
                  if line.startswith('#CHROM'):
                        columns = line.lstrip("#").split()
-          vcf_header_lines += line
+                 vcf_header_lines += line
             else:
                 s.write(line)
     s.seek(0)
@@ -143,11 +142,10 @@ def parse_annotations(info_field):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("vcf", help="VCF file to import")
-    parser.add_argument("--dry", type=str, action="store_true", default=False)
+    parser.add_argument("--dry", action="store_true", default=False)
     parser.add_argument("--study_name", type=str, action="store", required=True)
     parser.add_argument("--study_desc", type=str, action="store", required=False, default="Study Description")
     parser.add_argument("--filter_name", type=str, action="store", required=True)
-    parser.add_argument("--sample_name", type=str, action="store", required=True)
     parser.add_argument("--skip_samples", type=bool, action="store", required=False, default=False)
 
     args = parser.parse_args()
@@ -179,8 +177,8 @@ if __name__ == "__main__":
             if args.dry:
                 print "Add new sampleID to database: %s" % sampleID
             else:
-                sample_mgr.insert_sample(args.sample_name, study_id, args.study_name)
-                sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
+                sample_mgr.insert_sample(sampleID, study_id, args.study_name)
+                sample_id = sample_mgr.get_sample(sampleID)["_id"]
         finally:
             # insert the new meta data
             file_dict = {"filename": args.vcf,
@@ -201,7 +199,7 @@ if __name__ == "__main__":
             if "FGT" in dd:
                 if dd["FGT"] == "0/0":
                     continue
-            elif "GT" id dd:
+            elif "GT" in dd:
                 if dd["FGT"] == "0/0":
                     continue
 
