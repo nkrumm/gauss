@@ -1,5 +1,6 @@
 import argparse
 import sys
+import pprint
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../code/")
 from managers import *
@@ -80,28 +81,31 @@ short_key_names = {'Alignability': 'ALI',
                    'dbNSFP_phyloP': 'PyP'}
 
                     
-
-def read_vcf(vcf_filename):
+def read_vcf(vcf_filename, columns=None):
+    columns = None
     s = StringIO()
     vcf_header_lines = ""
     with open(vcf_filename) as f:
         for line in f:
             if line.startswith('#'):
-                vcf_header_lines += line
+          if line.startswith('#'):
+                 if line.startswith('#CHROM'):
+                       columns = line.lstrip("#").split()
+          vcf_header_lines += line
             else:
                 s.write(line)
     s.seek(0)
-    df = pandas.read_csv(s, sep="\t",names=["CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","DATA"])
-    return df, vcf_header_lines
-
-def parse_info(info_field):
-    return {x.split("=")[0]:x.split("=")[1] for x in info_field.split(";")}  
+    df = pd.read_csv(s, sep="\t",names=columns)
+    return df, vcf_header_lines, columns
 
 def parse_annotations(info_field):
     field_list = info_field.split(";")
     out = {}
     for field in field_list:
-        key,value = field.split("=")
+        try:
+            key, value = field.split("=")
+        except ValueError:
+            key, value = field, True
         if key == "EFF":
             # this is the SNPEFF field, parse it appropriately
             #NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Gtt/Att|V5I|293|HNRNPCL1||CODING|NM_001013631.1|2|1),
@@ -129,13 +133,17 @@ def parse_annotations(info_field):
                 print key, value
         else:
             k = short_key_names.get(key,key)
-            out[k] = formatters[key](value)
+            try:
+                out[k] = formatters[key](value)
+            except KeyError:
+                out[k] = value
     return out
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vcf", type=str, action="store", required=True)
+    parser.add_argument("vcf", help="VCF file to import")
+    parser.add_argument("--dry", type=str, action="store_true", default=False)
     parser.add_argument("--study_name", type=str, action="store", required=True)
     parser.add_argument("--study_desc", type=str, action="store", required=False, default="Study Description")
     parser.add_argument("--filter_name", type=str, action="store", required=True)
@@ -146,7 +154,9 @@ if __name__ == "__main__":
     print args
     args.vcf = os.path.realpath(args.vcf)
     # Read VCF file
-    vcf_data, header_data = read_vcf(args.vcf)
+    vcf_data, header_data, columns = read_vcf(args.vcf)
+    
+    sampleIDs = columns[10:]
 
     # connect and set up all the mr. managers
     conn = db_conn().connect()
@@ -161,46 +171,66 @@ if __name__ == "__main__":
         study_mgr.insert_study(args.study_name, args.study_desc)
         study_id = study_mgr.get_study(args.study_name)["_id"]
 
-    try:
-        sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
-        if args.skip_samples:
-            print "Already imported sample!"
-            sys.exit(0)
-    except TypeError:
-        # sample doesnt exist yet, insert it!
-        sample_mgr.insert_sample(args.sample_name, study_id, args.study_name)
-        sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
-    finally:
-        # insert the new meta data
-        file_dict = {"filename": args.vcf,
-                     "filetype": "vcf",
-                     "metadata": {"vcf_header": header_data},
-                     "filter_name": args.filter_name,
-                     "date_imported": datetime.datetime.today()}
-        sample_mgr.add_file_to_sample(args.sample_name, file_dict)
+    for sampleID in sampleIDs:
+        try:
+            sample_id = sample_mgr.get_sample(sampleID)["_id"]
+        except TypeError:
+            # sample doesnt exist yet, insert it!
+            if args.dry:
+                print "Add new sampleID to database: %s" % sampleID
+            else:
+                sample_mgr.insert_sample(args.sample_name, study_id, args.study_name)
+                sample_id = sample_mgr.get_sample(args.sample_name)["_id"]
+        finally:
+            # insert the new meta data
+            file_dict = {"filename": args.vcf,
+                         "filetype": "vcf",
+                         "metadata": {"vcf_header": header_data},
+                         "filter_name": args.filter_name,
+                         "date_imported": datetime.datetime.today()}
+            if args.dry:
+                print "Add new sample meta to database: %s" % sampleID
+                print file_dict 
+            else:
+                sample_mgr.add_file_to_sample(sampleID, file_dict)
 
+        for ix, row in vcf_data.iterrows():
 
-    for ix, row in vcf_data.iterrows():
-        if row["FILTER"] != "0":
-            filters = [args.filter_name, row["FILTER"]]
-        else:
-            filters = [args.filter_name]
+            data = row[sampleID]
+            dd = dict(zip(data.split(":"), row["FORMAT"]))
+            if "FGT" in dd:
+                if dd["FGT"] == "0/0":
+                    continue
+            elif "GT" id dd:
+                if dd["FGT"] == "0/0":
+                    continue
 
-        if row["ID"] != ".":
-            id_tag = row["ID"]
-        else:
-            id_tag = None
+            if row["FILTER"] not in [".", "0", ""]:
+                filters = [args.filter_name, row["FILTER"]]
+            else:
+                filters = [args.filter_name]
 
-        annotations = parse_annotations(row["INFO"])
+            if row["ID"] != ".":
+                id_tag = row["ID"]
+            else:
+                id_tag = None
 
-        var_mgr.insert_variant_from_vcf(sample_id=sample_id, 
-                                        sample_name=args.sample_name, 
-                                        chrom=str(row["CHROM"]),
-                                        pos=int(row["POS"]), 
-                                        id=id_tag,
-                                        ref=row["REF"],
-                                        alt=row["ALT"],
-                                        qual=row["QUAL"],
-                                        filters=filters,
-                                        data=row["DATA"],
-                                         **annotations)
+            annotations = parse_annotations(row["INFO"])
+
+            if args.dry:
+                print "\t".join(sampleID, str(row["CHROM"]), int(row["POS"]), id_tag, row["REF"], row["ALT"], row["QUAL"], filters)
+                pprint.pprint(dd, width=160)
+                pprint.pprint(annotations, width=160)
+                print "--------------"
+            else:
+                var_mgr.insert_variant_from_vcf(sample_id=sample_id, 
+                                            sample_name=sampleID, 
+                                            chrom=str(row["CHROM"]),
+                                            pos=int(row["POS"]), 
+                                            id=id_tag,
+                                            ref=row["REF"],
+                                            alt=row["ALT"],
+                                            qual=row["QUAL"],
+                                            filters=filters,
+                                            data=data,
+                                             **annotations)
